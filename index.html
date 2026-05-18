@@ -3,18 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EarlytaOSint | HFSM Matrix</title>
+    <title>EarlytaOSint | AI Matrix</title>
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style>
         body { background-color: #0f0f0f; color: #e0e0e0; font-family: 'Courier New', Courier, monospace; margin: 0; padding: 20px; display: flex; justify-content: center; min-height: 100vh; align-items: flex-start;}
         
-        /* LAYAR LOGIN */
         #loginScreen { background-color: #1a1a1a; padding: 40px; border-radius: 8px; box-shadow: 0 4px 25px rgba(0,0,0,0.9); border-top: 4px solid #ff5555; width: 100%; max-width: 400px; text-align: center; margin-top: 10vh; }
         #loginScreen h2 { color: #ff5555; margin-top: 0; }
         #loginScreen input { width: 100%; padding: 12px; background-color: #111; border: 1px solid #444; color: #fff; border-radius: 4px; box-sizing: border-box; text-align: center; letter-spacing: 2px; margin-bottom: 20px; font-family: inherit;}
         #loginScreen input:focus { border-color: #ff5555; outline: none; }
         
-        /* DASHBOARD (Default disembunyikan sebelum login) */
         #mainApp { display: none; width: 100%; display: flex; justify-content: center;}
         .dashboard { background-color: #1a1a1a; width: 100%; max-width: 900px; border-radius: 8px; box-shadow: 0 4px 25px rgba(0,0,0,0.7); border-top: 4px solid #d4af37; overflow: hidden; }
         .header { padding: 20px; background-color: #111; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
@@ -37,7 +35,6 @@
         .badge.active-bhv { background-color: #5555ff; color: #fff; border-color: #5555ff; }
         .badge.active-exc { background-color: #55ff55; border-color: #55ff55; }
         
-        /* MENU & FORM */
         .nav-tabs { display: flex; background-color: #151515; border-bottom: 1px solid #333; overflow-x: auto; }
         .tab-link { flex: 1; padding: 12px; text-align: center; background: none; border: none; color: #888; font-family: inherit; cursor: pointer; transition: all 0.3s; border-bottom: 2px solid transparent; white-space: nowrap; }
         .tab-link:hover { color: #fff; background-color: #202020; }
@@ -50,10 +47,11 @@
         input:focus, textarea:focus, select:focus { border-color: #d4af37; outline: none; }
         button.btn-execute { width: 100%; padding: 12px; background-color: #d4af37; color: #121212; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: inherit; transition: background 0.3s; }
         button.btn-execute:hover { background-color: #b5952f; }
-        button:disabled { background-color: #444 !important; color: #888; cursor: not-allowed; }
+        button.btn-ai { background-color: #5555ff; color: white; margin-bottom: 15px; border: 1px solid #3333aa; display: flex; align-items: center; justify-content: center; gap: 8px;}
+        button.btn-ai:hover { background-color: #3333cc; }
+        button:disabled { background-color: #444 !important; color: #888 !important; cursor: not-allowed; border:none; }
         .status-log { margin-top: 15px; padding: 10px; background-color: #111; border-radius: 4px; font-size: 0.8em; color: #888; text-align: center; }
         
-        /* VISUAL MAP & TIMELINE */
         #networkGraph { width: 100%; height: 450px; background-color: #111; border: 1px solid #333; border-radius: 4px; margin-top: 10px; }
         .timeline-container { position: relative; max-width: 100%; margin: 20px 0; padding-left: 20px; border-left: 2px solid #444; }
         .timeline-item { position: relative; margin-bottom: 25px; padding-left: 20px; }
@@ -66,7 +64,6 @@
         .timeline-title { font-weight: bold; color: #fff; margin-bottom: 5px; font-size: 1.05em; }
         .timeline-desc { font-size: 0.9em; color: #aaa; line-height: 1.5; background: #222; padding: 10px; border-radius: 4px; border-left: 3px solid #444; }
         
-        /* DOSSIER (PRINT VIEW) */
         #dossierPaper { display: none; background-color: #e0e0e0; color: #121212; padding: 40px; border-radius: 4px; margin-top: 20px; font-family: 'Arial', sans-serif; }
         
         @media print {
@@ -93,7 +90,7 @@
 <div id="mainApp">
     <div class="dashboard">
         <div class="header">
-            <h1>[ EarlytaOSint v1.6 ]</h1>
+            <h1>[ EarlytaOSint v1.7 AI Edition ]</h1>
             <div class="selector-zone">
                 <label style="display:inline; margin:0;">Target Aktif:</label>
                 <select id="targetPicker" class="target-picker" onchange="switchActiveTarget(this.value)">
@@ -141,12 +138,7 @@
             <div class="form-group"><label>Platform</label><input type="text" id="fp-platform"></div>
             <div class="form-group"><label>URL Temuan Jejak</label><input type="text" id="fp-url"></div>
             <div class="form-group"><label>Kategori Sub-State RECON</label>
-                <select id="fp-kategori">
-                    <option value="Sosial">Sosial (Media Sosial/Hiburan)</option>
-                    <option value="Profesional">Profesional (Kerja/LinkedIn)</option>
-                    <option value="Akademik">Akademik (Publikasi/Kampus)</option>
-                    <option value="Anonim">Anonim (Forum Gelap)</option>
-                </select>
+                <select id="fp-kategori"><option value="Sosial">Sosial</option><option value="Profesional">Profesional</option><option value="Akademik">Akademik</option><option value="Anonim">Anonim</option></select>
             </div>
             <div class="form-group"><label>Validitas Temuan</label><select id="fp-validitas"><option value="High">Tinggi</option><option value="Medium">Sedang</option><option value="Low">Rendah</option></select></div>
             <button class="btn-execute" id="btn-fp" onclick="submitFootprint()">Tambahkan Jejak & Update HFSM</button>
@@ -163,28 +155,24 @@
         </div>
 
         <div id="tab-execution" class="tab-content">
-            <div class="form-group"><label>Vektor Pendekatan</label><select id="ex-vektor"><option value="Phishing via Email">Phishing Email</option><option value="Baiting LinkedIn">Baiting LinkedIn</option></select></div>
-            <div class="form-group"><label>Skenario Narasi</label><textarea id="ex-narasi" rows="4"></textarea></div>
+            <div class="form-group"><label>Vektor Pendekatan</label><select id="ex-vektor"><option value="Phishing via Email">Phishing Email</option><option value="Baiting LinkedIn">Baiting LinkedIn</option><option value="Chat Messaging">Direct Message (WhatsApp/Telegram)</option></select></div>
+            
+            <div class="form-group">
+                <label>Skenario Narasi Pancingan (Pretexting)</label>
+                <button class="btn-execute btn-ai" id="btn-ai-gen" onclick="generateAIPrompt()">
+                    <span>✨</span> Auto-Generate Narasi dengan AI Cognitive
+                </button>
+                <textarea id="ex-narasi" rows="8" placeholder="Ketik manual atau gunakan AI untuk merangkai teks pretexting berdasarkan profil psikologis target..."></textarea>
+            </div>
+
             <div class="form-group"><label>Probabilitas Sukses</label><select id="ex-probabilitas"><option value="90%">Sangat Tinggi (~90%)</option><option value="60%">Moderat (~60%)</option><option value="30%">Rendah (~30%)</option></select></div>
             <button class="btn-execute" id="btn-ex" onclick="submitExecution()">Kunci Skenario Eksekusi (PROFILED)</button>
             <div id="log-execution" class="status-log">Menyusun hipotesis eksekusi akhir.</div>
         </div>
 
-        <div id="tab-visual" class="tab-content">
-            <div id="networkGraph"></div>
-            <button class="btn-execute" style="margin-top: 15px; background-color: #252525; color: #d4af37;" onclick="renderVisualMap()">🔄 Muat Ulang Peta</button>
-        </div>
-
-        <div id="tab-timeline" class="tab-content">
-            <div id="timelineBoard"></div>
-            <button class="btn-execute" style="margin-top: 15px; background-color: #252525; color: #d4af37;" onclick="renderTimeline()">⏳ Segarkan Narasi</button>
-        </div>
-
-        <div id="tab-dossier" class="tab-content">
-            <button class="btn-execute" style="background-color: #252525; color: #d4af37; margin-bottom: 20px;" onclick="generateDossier()">📄 Kumpulkan Data Dossier</button>
-            <div id="dossierPaper"></div>
-            <button id="btn-print" class="btn-execute" style="margin-top: 20px; display: none;" onclick="window.print()">🖨️ Cetak PDF</button>
-        </div>
+        <div id="tab-visual" class="tab-content"><div id="networkGraph"></div><button class="btn-execute" style="margin-top: 15px; background-color: #252525; color: #d4af37;" onclick="renderVisualMap()">🔄 Muat Ulang Peta</button></div>
+        <div id="tab-timeline" class="tab-content"><div id="timelineBoard"></div><button class="btn-execute" style="margin-top: 15px; background-color: #252525; color: #d4af37;" onclick="renderTimeline()">⏳ Segarkan Narasi</button></div>
+        <div id="tab-dossier" class="tab-content"><button class="btn-execute" style="background-color: #252525; color: #d4af37; margin-bottom: 20px;" onclick="generateDossier()">📄 Kumpulkan Data Dossier</button><div id="dossierPaper"></div><button id="btn-print" class="btn-execute" style="margin-top: 20px; display: none;" onclick="window.print()">🖨️ Cetak PDF</button></div>
     </div>
 </div>
 
@@ -199,14 +187,13 @@
     let networkInstance = null;
     let cachedTimelineData = []; 
 
-    // --- FUNGSI LOGIN ---
     async function attemptLogin() {
         const key = document.getElementById("authKey").value;
         const msgEl = document.getElementById("loginMsg");
         const btn = document.getElementById("btnLogin");
         if (!key) return;
-        
         btn.disabled = true; btn.innerText = "VERIFYING..."; msgEl.innerText = "";
+        
         try {
             const response = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "VERIFY_LOGIN", auth_token: key }) });
             const result = await response.json();
@@ -220,7 +207,6 @@
         finally { btn.disabled = false; btn.innerText = "AUTHORIZE"; }
     }
 
-    // --- FUNGSI KOMUNIKASI API ---
     async function sendToEngine(payload, logId, btn) {
         payload.auth_token = SESSION_TOKEN; 
         const logEl = document.getElementById(logId);
@@ -239,7 +225,6 @@
         } finally { if(btn) btn.disabled = false; }
     }
 
-    // --- FUNGSI UI & NAVIGASI ---
     async function loadTargetDropdown() {
         const picker = document.getElementById("targetPicker");
         try {
@@ -252,7 +237,7 @@
                 });
                 picker.value = CURRENT_TARGET_ID;
             }
-        } catch (e) { console.error("Dropdown error:", e); }
+        } catch (e) { }
     }
 
     function switchTab(evt, tabId) {
@@ -262,7 +247,6 @@
         for (let i = 0; i < tablinks.length; i++) tablinks[i].className = tablinks[i].className.replace(" active", "");
         document.getElementById(tabId).className += " active";
         evt.currentTarget.className += " active";
-        
         if(tabId === 'tab-visual') renderVisualMap();
         if(tabId === 'tab-timeline') renderTimeline();
     }
@@ -271,55 +255,41 @@
         CURRENT_TARGET_ID = targetId;
         const picker = document.getElementById("targetPicker");
         const isNone = (targetId === "NONE");
-        
         picker.style.color = isNone ? "#ff5555" : "#55ff55";
         document.getElementById("btn-wipe").style.display = isNone ? "none" : "block"; 
-        
         const menus = ["menu-footprint", "menu-behavior", "menu-execution", "menu-visual", "menu-timeline", "menu-dossier"];
         menus.forEach(menu => document.getElementById(menu).disabled = isNone);
-        
         if (isNone) { document.getElementById("hfsmPanel").style.display = "none"; } 
         else { refreshHFSMStatus(); }
-        
-        document.getElementById("dossierPaper").style.display = "none";
-        document.getElementById("btn-print").style.display = "none";
+        document.getElementById("dossierPaper").style.display = "none"; document.getElementById("btn-print").style.display = "none";
         if(!isNone && document.getElementById("tab-visual").classList.contains("active")) renderVisualMap();
         if(!isNone && document.getElementById("tab-timeline").classList.contains("active")) renderTimeline();
     }
 
-    // --- FUNGSI KALKULASI HFSM (FRONTEND RENDER) ---
     async function refreshHFSMStatus() {
-        if (CURRENT_TARGET_ID === "NONE") { document.getElementById("hfsmPanel").style.display = "none"; return; }
+        if (CURRENT_TARGET_ID === "NONE") return;
         try {
             const response = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "GET_HFSM_STATUS", target_id: CURRENT_TARGET_ID, auth_token: SESSION_TOKEN }) });
             const result = await response.json();
-            
             if (result.status === "success") {
                 document.getElementById("hfsmPanel").style.display = "block";
                 document.getElementById("progressText").innerText = `${result.progress}% PROFILED`;
                 document.getElementById("mainStateText").innerText = result.main_state;
-                
                 const barFill = document.getElementById("hfsmProgress");
                 barFill.style.width = `${result.progress}%`;
-                
                 if(result.progress < 50) barFill.style.backgroundColor = "#ff5555"; 
                 else if(result.progress < 100) barFill.style.backgroundColor = "#d4af37"; 
                 else barFill.style.backgroundColor = "#55ff55"; 
 
                 const m = result.hfsm_matrix;
-                const toggleBadge = (id, isActive, activeClass) => {
-                    const el = document.getElementById(id);
-                    if(isActive) { el.classList.add("active", activeClass); } 
-                    else { el.classList.remove("active", "active-recon", "active-bhv", "active-exc"); }
-                };
+                const toggleBadge = (id, isActive, actClass) => { const el = document.getElementById(id); if(isActive) { el.classList.add("active", actClass); } else { el.classList.remove("active", "active-recon", "active-bhv", "active-exc"); } };
                 toggleBadge("bdg-sos", m.sosial, "active-recon"); toggleBadge("bdg-pro", m.profesional, "active-recon");
                 toggleBadge("bdg-aka", m.akademik, "active-recon"); toggleBadge("bdg-ano", m.anonim, "active-recon");
                 toggleBadge("bdg-bhv", m.behavior, "active-bhv"); toggleBadge("bdg-exc", m.execution, "active-exc");
             }
-        } catch(e) { console.error("HFSM Sync error:", e); }
+        } catch(e) {}
     }
 
-    // --- INPUT DATA ---
     async function submitInisiasi() {
         const nama = document.getElementById("init-nama").value; const identifier = document.getElementById("init-identifier").value; const notes = document.getElementById("init-notes").value;
         if (!nama || !identifier) return alert("Wajib diisi!");
@@ -342,16 +312,44 @@
         if(res) { document.getElementById("ex-narasi").value=''; refreshHFSMStatus(); }
     }
 
-    // --- VISUALISASI & LAPORAN ---
+    // --- FUNGSI BARU: GENERATOR AI UNTUK PRETEXTING ---
+    async function generateAIPrompt() {
+        if (CURRENT_TARGET_ID === "NONE") return alert("Pilih target terlebih dahulu!");
+        
+        const btnAI = document.getElementById("btn-ai-gen");
+        const logExec = document.getElementById("log-execution");
+        const narasiArea = document.getElementById("ex-narasi");
+        
+        btnAI.disabled = true;
+        btnAI.innerHTML = "🧠 AI Sedang Menyusun Strategi Pretexting...";
+        logExec.style.color = "#d4af37";
+        logExec.innerText = "Mengirim profil target ke model kognitif Gemini...";
+
+        try {
+            const res = await sendToEngine({ action: "GENERATE_AI_PRETEXT", target_id: CURRENT_TARGET_ID }, "log-execution", null);
+            if (res && res.generated_text) {
+                // Hapus tanda kutip atau markdown berlebih dari AI jika ada, lalu masukkan ke textarea
+                narasiArea.value = res.generated_text.trim();
+                logExec.style.color = "#55ff55";
+                logExec.innerText = "[SUCCESS] Narasi AI berhasil di-generate. Silakan tinjau dan edit sebelum dikunci.";
+            }
+        } catch(e) {
+            logExec.style.color = "#ff5555";
+            logExec.innerText = "[ERROR] AI gagal membuat narasi. Cek apakah API Key sudah dipasang di Backend.";
+        } finally {
+            btnAI.disabled = false;
+            btnAI.innerHTML = "<span>✨</span> Auto-Generate Narasi dengan AI Cognitive";
+        }
+    }
+
+    // --- RENDER VISUAL & LAPORAN ---
     async function renderVisualMap() {
         const container = document.getElementById("networkGraph"); container.innerHTML = "<p style='padding:20px; color:#aaa;'>Menarik struktur relasi...</p>";
         if (CURRENT_TARGET_ID === "NONE") return;
         try {
             const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "GET_GRAPH_DATA", target_id: CURRENT_TARGET_ID, auth_token: SESSION_TOKEN }) });
             const result = await res.json();
-            if (result.status === "success") {
-                networkInstance = new vis.Network(container, { nodes: new vis.DataSet(result.nodes), edges: new vis.DataSet(result.edges) }, { nodes: { font: { color: '#ffffff' }, borderWidth: 2 }, edges: { color: { color: '#555' }, arrows: 'to' } });
-            }
+            if (result.status === "success") { networkInstance = new vis.Network(container, { nodes: new vis.DataSet(result.nodes), edges: new vis.DataSet(result.edges) }, { nodes: { font: { color: '#ffffff' }, borderWidth: 2 }, edges: { color: { color: '#555' }, arrows: 'to' } }); }
         } catch (e) { container.innerHTML = "<p style='color:#ff5555;'>Gagal merender grafik.</p>"; }
     }
 
@@ -380,19 +378,13 @@
         paper.style.display = "block"; document.getElementById("btn-print").style.display = "block";
     }
 
-    // --- PROTOKOL WIPE ---
     async function wipeTargetData() {
         if (CURRENT_TARGET_ID === "NONE") return;
         if (!confirm(`PERINGATAN KRITIS: Hapus SELURUH data target [${CURRENT_TARGET_ID}]?\n\nLanjutkan?`)) return;
         const btnWipe = document.getElementById("btn-wipe"); const originalText = btnWipe.innerText; btnWipe.innerText = "MENGHANGUSKAN..."; btnWipe.disabled = true;
         try {
             const res = await sendToEngine({ action: "DELETE_TARGET", target_id: CURRENT_TARGET_ID }, null, null);
-            if (res) { 
-                alert("Protokol Wipe Selesai:\n" + res.message); 
-                await loadTargetDropdown(); 
-                switchActiveTarget("NONE"); 
-                switchTab({ currentTarget: document.getElementsByClassName("tab-link")[0] }, 'tab-inisiasi'); 
-            }
+            if (res) { alert("Protokol Wipe Selesai:\n" + res.message); await loadTargetDropdown(); switchActiveTarget("NONE"); switchTab({ currentTarget: document.getElementsByClassName("tab-link")[0] }, 'tab-inisiasi'); }
         } finally { btnWipe.innerText = originalText; btnWipe.disabled = false; }
     }
 </script>
