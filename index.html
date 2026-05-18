@@ -6,75 +6,196 @@
     <title>EarlytaOSint | Forensic Matrix</title>
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style>
-        body { background-color: #0f0f0f; color: #e0e0e0; font-family: 'Courier New', Courier, monospace; margin: 0; padding: 20px; display: flex; justify-content: center; min-height: 100vh; align-items: flex-start;}
+        /* =========================================
+           TEMA & TIPOGRAFI MODERN
+        ========================================= */
+        :root {
+            --bg-body: #0b0c10;
+            --bg-card: #1f2833;
+            --bg-input: #11151a;
+            --text-main: #c5c6c7;
+            --text-muted: #888;
+            --gold: #d4af37;
+            --red: #ff5555;
+            --blue: #5555ff;
+            --green: #2ed573;
+            --border: #333;
+        }
+
+        body { 
+            background-color: var(--bg-body); 
+            color: var(--text-main); 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            min-height: 100vh;
+        }
+
+        /* =========================================
+           LAYAR LOGIN (OVERLAY TENGAH)
+        ========================================= */
+        #loginScreen { 
+            background-color: var(--bg-card); 
+            padding: 40px; 
+            border-radius: 12px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8); 
+            border-top: 4px solid var(--red); 
+            width: 100%; 
+            max-width: 420px; 
+            text-align: center; 
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-sizing: border-box;
+        }
+        #loginScreen h2 { color: var(--red); margin: 0 0 10px 0; letter-spacing: 2px; }
+        #loginScreen input { 
+            width: 100%; padding: 14px; background-color: var(--bg-input); 
+            border: 1px solid var(--border); color: #fff; border-radius: 6px; 
+            box-sizing: border-box; text-align: center; letter-spacing: 3px; 
+            margin-bottom: 20px; font-family: 'Courier New', Courier, monospace; font-size: 1.1em;
+            transition: border 0.3s;
+        }
+        #loginScreen input:focus { border-color: var(--red); outline: none; box-shadow: 0 0 8px rgba(255,85,85,0.3); }
+
+        /* =========================================
+           DASHBOARD UTAMA
+        ========================================= */
+        #mainApp { 
+            display: none; /* Disembunyikan secara default */
+            width: 100%; 
+            max-width: 1000px; 
+            margin: 40px 20px;
+        }
+        .dashboard { 
+            background-color: var(--bg-card); 
+            border-radius: 12px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            border-top: 4px solid var(--gold); 
+            overflow: hidden; 
+        }
+
+        /* HEADER & SELECTOR */
+        .header { 
+            padding: 25px 30px; 
+            background-color: rgba(0,0,0,0.2); 
+            border-bottom: 1px solid var(--border); 
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; 
+        }
+        .header h1 { margin: 0; color: var(--gold); font-size: 1.6em; font-family: 'Courier New', Courier, monospace; letter-spacing: 1px;}
+        .selector-zone { display: flex; align-items: center; gap: 12px; }
+        select.target-picker { 
+            background-color: var(--bg-input); color: var(--red); border: 1px solid var(--border); 
+            padding: 10px 15px; font-family: inherit; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95em;
+            outline: none; transition: border 0.3s;
+        }
+        select.target-picker:focus { border-color: var(--gold); }
         
-        #loginScreen { background-color: #1a1a1a; padding: 40px; border-radius: 8px; box-shadow: 0 4px 25px rgba(0,0,0,0.9); border-top: 4px solid #ff5555; width: 100%; max-width: 400px; text-align: center; margin-top: 10vh; }
-        #loginScreen h2 { color: #ff5555; margin-top: 0; }
-        #loginScreen input { width: 100%; padding: 12px; background-color: #111; border: 1px solid #444; color: #fff; border-radius: 4px; box-sizing: border-box; text-align: center; letter-spacing: 2px; margin-bottom: 20px; font-family: inherit;}
-        #loginScreen input:focus { border-color: #ff5555; outline: none; }
-        
-        #mainApp { display: none; width: 100%; display: flex; justify-content: center;}
-        .dashboard { background-color: #1a1a1a; width: 100%; max-width: 1000px; border-radius: 8px; box-shadow: 0 4px 25px rgba(0,0,0,0.7); border-top: 4px solid #d4af37; overflow: hidden; }
-        .header { padding: 20px; background-color: #111; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .header h1 { margin: 0; color: #d4af37; font-size: 1.4em; }
-        
-        .selector-zone { display: flex; align-items: center; gap: 10px; }
-        select.target-picker { background-color: #252525; color: #ff5555; border: 1px solid #444; padding: 8px; font-family: inherit; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .btn-wipe { background-color: #8b0000; color: #fff; border: 1px solid #ff5555; padding: 8px 12px; cursor: pointer; font-family: inherit; font-weight: bold; border-radius: 4px; display: none; transition: background 0.3s; }
-        .btn-wipe:hover { background-color: #ff5555; color: #000; }
-        
-        #hfsmPanel { background-color: #151515; padding: 15px 25px; border-bottom: 1px solid #333; display: none; }
-        .hfsm-title { font-size: 0.8em; color: #888; margin-bottom: 8px; display: flex; justify-content: space-between; }
-        .progress-bar-bg { width: 100%; background-color: #222; border-radius: 10px; height: 8px; margin-bottom: 15px; overflow: hidden; border: 1px solid #333; }
-        .progress-bar-fill { height: 100%; background-color: #d4af37; width: 0%; transition: width 0.5s ease-in-out; box-shadow: 0 0 10px rgba(212, 175, 55, 0.5); }
-        .badge-container { display: flex; gap: 8px; flex-wrap: wrap; }
-        .badge { padding: 4px 8px; font-size: 0.75em; border-radius: 4px; border: 1px solid #444; color: #555; background: #111; font-weight: bold; transition: all 0.3s; }
-        .badge.active { color: #121212; border-color: #d4af37; box-shadow: 0 0 5px rgba(212, 175, 55, 0.3); }
-        .badge.active-recon { background-color: #d4af37; }
-        .badge.active-bhv { background-color: #5555ff; color: #fff; border-color: #5555ff; }
-        .badge.active-exc { background-color: #55ff55; border-color: #55ff55; }
-        
-        .nav-tabs { display: flex; background-color: #151515; border-bottom: 1px solid #333; overflow-x: auto; }
-        .tab-link { flex: 1; padding: 12px; text-align: center; background: none; border: none; color: #888; font-family: inherit; cursor: pointer; transition: all 0.3s; border-bottom: 2px solid transparent; white-space: nowrap; font-size: 0.85em;}
-        .tab-link:hover { color: #fff; background-color: #202020; }
-        .tab-link.active { color: #d4af37; border-bottom: 2px solid #d4af37; background-color: #1a1a1a; font-weight: bold; }
-        
-        .tab-content { padding: 25px; display: none; }
+        .btn-wipe { 
+            background-color: #5a1a1a; color: #fff; border: 1px solid var(--red); 
+            padding: 10px 15px; cursor: pointer; font-family: inherit; font-weight: bold; 
+            border-radius: 6px; display: none; transition: all 0.3s; 
+        }
+        .btn-wipe:hover { background-color: var(--red); color: #fff; box-shadow: 0 0 10px rgba(255,85,85,0.4); }
+
+        /* PANEL HFSM */
+        #hfsmPanel { background-color: rgba(0,0,0,0.3); padding: 20px 30px; border-bottom: 1px solid var(--border); display: none; }
+        .hfsm-title { font-size: 0.85em; color: var(--text-muted); margin-bottom: 12px; display: flex; justify-content: space-between; letter-spacing: 1px; }
+        .progress-bar-bg { width: 100%; background-color: var(--bg-input); border-radius: 10px; height: 10px; margin-bottom: 18px; border: 1px solid var(--border); }
+        .progress-bar-fill { height: 100%; background-color: var(--gold); width: 0%; border-radius: 10px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 12px rgba(212, 175, 55, 0.6); }
+        .badge-container { display: flex; gap: 10px; flex-wrap: wrap; }
+        .badge { padding: 6px 12px; font-size: 0.75em; border-radius: 20px; border: 1px solid var(--border); color: #666; background: var(--bg-input); font-weight: 600; transition: all 0.3s; letter-spacing: 0.5px;}
+        .badge.active { color: #fff; border-color: transparent; }
+        .badge.active-recon { background-color: var(--gold); color: #000; box-shadow: 0 0 8px rgba(212, 175, 55, 0.4);}
+        .badge.active-bhv { background-color: var(--blue); box-shadow: 0 0 8px rgba(85, 85, 255, 0.4);}
+        .badge.active-exc { background-color: var(--green); color: #000; box-shadow: 0 0 8px rgba(46, 213, 115, 0.4);}
+
+        /* MENU NAVIGASI TABS */
+        .nav-tabs { 
+            display: flex; background-color: rgba(0,0,0,0.15); border-bottom: 1px solid var(--border); 
+            overflow-x: auto; /* Memastikan bisa digeser di layar kecil */
+        }
+        .nav-tabs::-webkit-scrollbar { display: none; } /* Sembunyikan scrollbar agar rapi */
+        .tab-link { 
+            flex: 1; min-width: 100px; padding: 15px 10px; text-align: center; background: none; border: none; 
+            color: var(--text-muted); font-family: inherit; font-size: 0.85em; cursor: pointer; 
+            transition: all 0.3s; border-bottom: 3px solid transparent; font-weight: 500;
+        }
+        .tab-link:hover:not(:disabled) { color: #fff; background-color: rgba(255,255,255,0.05); }
+        .tab-link.active { color: var(--gold); border-bottom: 3px solid var(--gold); background-color: transparent; font-weight: bold; }
+        .tab-link:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* KONTEN FORM & INPUT */
+        .tab-content { padding: 30px; display: none; animation: fadeIn 0.4s ease-in-out; }
         .tab-content.active { display: block; }
-        .form-group { margin-bottom: 18px; }
-        label { display: block; margin-bottom: 6px; font-size: 0.9em; color: #aaa; }
-        input[type="text"], textarea, select { width: 100%; padding: 10px; background-color: #252525; border: 1px solid #444; color: #fff; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
-        input:focus, textarea:focus, select:focus { border-color: #d4af37; outline: none; }
-        button.btn-execute { width: 100%; padding: 12px; background-color: #d4af37; color: #121212; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: inherit; transition: background 0.3s; }
-        button.btn-execute:hover { background-color: #b5952f; }
-        button.btn-ai { background-color: #5555ff; color: white; margin-bottom: 15px; border: 1px solid #3333aa; display: flex; align-items: center; justify-content: center; gap: 8px;}
-        button.btn-ai:hover { background-color: #3333cc; }
-        button.btn-ai-red { background-color: #aa3333; color: white; margin-bottom: 15px; border: 1px solid #882222; display: flex; align-items: center; justify-content: center; gap: 8px;}
-        button.btn-ai-red:hover { background-color: #cc3333; }
-        button:disabled { background-color: #444 !important; color: #888 !important; cursor: not-allowed; border:none; }
-        .status-log { margin-top: 15px; padding: 10px; background-color: #111; border-radius: 4px; font-size: 0.8em; color: #888; text-align: center; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         
-        #networkGraph { width: 100%; height: 450px; background-color: #111; border: 1px solid #333; border-radius: 4px; margin-top: 10px; }
-        .timeline-container { position: relative; max-width: 100%; margin: 20px 0; padding-left: 20px; border-left: 2px solid #444; }
-        .timeline-item { position: relative; margin-bottom: 25px; padding-left: 20px; }
-        .timeline-item::before { content: ''; position: absolute; left: -27px; top: 3px; width: 12px; height: 12px; border-radius: 50%; background-color: #d4af37; border: 2px solid #1a1a1a; box-shadow: 0 0 8px rgba(212, 175, 55, 0.5); }
-        .timeline-date { font-size: 0.75em; color: #d4af37; margin-bottom: 4px; display: block; }
-        .timeline-title { font-weight: bold; color: #fff; margin-bottom: 5px; font-size: 1.05em; }
-        .timeline-desc { font-size: 0.9em; color: #aaa; line-height: 1.5; background: #222; padding: 10px; border-radius: 4px; border-left: 3px solid #444; }
+        .form-group { margin-bottom: 22px; }
+        label { display: block; margin-bottom: 8px; font-size: 0.9em; color: #aaa; font-weight: 500; }
+        input[type="text"], textarea, select { 
+            width: 100%; padding: 12px 15px; background-color: var(--bg-input); 
+            border: 1px solid var(--border); color: #fff; border-radius: 6px; 
+            box-sizing: border-box; font-family: inherit; font-size: 0.95em;
+            transition: border 0.3s, box-shadow 0.3s;
+        }
+        input:focus, textarea:focus, select:focus { border-color: var(--gold); outline: none; box-shadow: 0 0 5px rgba(212, 175, 55, 0.2); }
+        textarea { resize: vertical; min-height: 80px; }
+
+        /* TOMBOL AKSI */
+        button.btn-execute { 
+            width: 100%; padding: 14px; background-color: var(--gold); color: #111; 
+            border: none; border-radius: 6px; font-weight: bold; font-size: 0.95em; 
+            cursor: pointer; font-family: inherit; transition: all 0.3s; letter-spacing: 0.5px;
+        }
+        button.btn-execute:hover:not(:disabled) { background-color: #e5c158; transform: translateY(-1px); }
+        button:disabled { background-color: #333 !important; color: #666 !important; cursor: not-allowed; transform: none; }
         
-        #dossierPaper { display: none; background-color: #e0e0e0; color: #121212; padding: 40px; border-radius: 4px; margin-top: 20px; font-family: 'Arial', sans-serif; }
+        button.btn-ai { background-color: var(--blue); color: white; margin-bottom: 15px; }
+        button.btn-ai:hover:not(:disabled) { background-color: #6c6cff; box-shadow: 0 4px 15px rgba(85,85,255,0.3); }
         
-        /* Area Hasil Forensik */
-        #ling-result { margin-top: 20px; padding: 20px; background-color: #111; border-left: 4px solid #ff5555; display: none; white-space: pre-wrap; font-size: 0.95em; line-height: 1.6; color: #ddd; }
+        button.btn-ai-red { background-color: var(--red); color: white; margin-bottom: 15px; }
+        button.btn-ai-red:hover:not(:disabled) { background-color: #ff6b6b; box-shadow: 0 4px 15px rgba(255,85,85,0.3); }
+
+        .status-log { margin-top: 20px; padding: 12px; background-color: rgba(0,0,0,0.3); border-radius: 6px; font-size: 0.85em; color: var(--text-muted); text-align: center; border: 1px dashed var(--border); font-family: 'Courier New', Courier, monospace;}
+
+        /* KOMPONEN VISUAL & TIMELINE */
+        #networkGraph { width: 100%; height: 500px; background-color: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; margin-top: 10px; }
+        
+        .timeline-container { position: relative; max-width: 100%; margin: 25px 0; padding-left: 25px; border-left: 2px solid var(--border); }
+        .timeline-item { position: relative; margin-bottom: 30px; padding-left: 20px; }
+        .timeline-item::before { 
+            content: ''; position: absolute; left: -32px; top: 3px; width: 12px; height: 12px; 
+            border-radius: 50%; background-color: var(--gold); border: 3px solid var(--bg-card); 
+        }
+        .timeline-item.inisiasi::before { background-color: var(--text-muted); }
+        .timeline-item.jejak::before { background-color: var(--gold); }
+        .timeline-item.perilaku::before { background-color: var(--blue); }
+        .timeline-item.eksekusi::before { background-color: var(--green); }
+        
+        .timeline-date { font-size: 0.8em; color: var(--gold); margin-bottom: 6px; display: block; font-family: 'Courier New', Courier, monospace; }
+        .timeline-title { font-weight: bold; color: #fff; margin-bottom: 8px; font-size: 1.1em; }
+        .timeline-desc { font-size: 0.95em; color: #bbb; line-height: 1.6; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 6px; border-left: 3px solid var(--border); }
+
+        /* AREA FORENSIK */
+        #ling-result { 
+            margin-top: 25px; padding: 25px; background-color: rgba(255, 85, 85, 0.05); 
+            border-left: 4px solid var(--red); border-radius: 0 6px 6px 0; display: none; 
+            white-space: pre-wrap; font-size: 0.95em; line-height: 1.7; color: #eaeaea; 
+        }
+
+        /* PRINT / DOSSIER */
+        #dossierPaper { display: none; background-color: #f9f9f9; color: #111; padding: 50px; border-radius: 8px; margin-top: 25px; font-family: 'Times New Roman', Times, serif; }
         
         @media print {
-            body { background-color: #fff; color: #000; display: block; padding: 0; margin: 0; font-family: 'Arial', sans-serif; }
-            .dashboard { box-shadow: none; border: none; max-width: 100%; border-radius: 0; background-color: #fff; }
-            .header, .nav-tabs, .btn-execute, .form-group, #networkGraph, .status-log, .selector-zone, #hfsmPanel { display: none !important; }
+            body { background-color: #fff; color: #000; display: block; padding: 0; margin: 0; }
+            .dashboard { box-shadow: none; border: none; max-width: 100%; border-radius: 0; background-color: #fff; margin: 0; }
+            .header, .nav-tabs, .btn-execute, .form-group, #networkGraph, .status-log, .selector-zone, #hfsmPanel, p { display: none !important; }
             .tab-content { display: none; padding: 0; }
             #tab-dossier, #dossierPaper { display: block !important; background-color: #fff !important; color: #000 !important; padding: 0 !important; margin: 0 !important; border: none !important; }
-            #dossierHeaderArea { border-bottom: 2px solid #000; margin-bottom: 20px; padding-bottom: 10px; }
-            .dossier-section { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ccc; }
+            #dossierHeaderArea { border-bottom: 2px solid #000; margin-bottom: 25px; padding-bottom: 15px; }
+            .dossier-section { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #ddd; }
         }
     </style>
 </head>
@@ -82,10 +203,10 @@
 
 <div id="loginScreen">
     <h2>[ RESTRICTED ACCESS ]</h2>
-    <p style="color: #aaa; font-size: 0.85em; margin-bottom: 20px;">Masukkan kredensial EarlytaOSint untuk mengakses matriks.</p>
+    <p style="color: #888; font-size: 0.9em; margin-bottom: 25px;">Otorisasi diperlukan untuk mengakses Matriks Forensik.</p>
     <input type="password" id="authKey" placeholder="*** KEY ***" onkeypress="if(event.key === 'Enter') attemptLogin()">
     <button class="btn-execute" id="btnLogin" style="background-color: #ff5555; color: #fff;" onclick="attemptLogin()">AUTHORIZE</button>
-    <div id="loginMsg" style="margin-top: 15px; color: #ff5555; font-size: 0.85em;"></div>
+    <div id="loginMsg" style="margin-top: 20px; color: #ff5555; font-size: 0.85em;"></div>
 </div>
 
 <div id="mainApp">
@@ -93,7 +214,7 @@
         <div class="header">
             <h1>[ EarlytaOSint v1.8 Forensic ]</h1>
             <div class="selector-zone">
-                <label style="display:inline; margin:0;">Target Aktif:</label>
+                <label style="display:inline; margin:0; color:#888; font-size: 0.85em;">Target Aktif:</label>
                 <select id="targetPicker" class="target-picker" onchange="switchActiveTarget(this.value)">
                     <option value="NONE">-- PILIH TARGET --</option>
                 </select>
@@ -103,7 +224,7 @@
 
         <div id="hfsmPanel">
             <div class="hfsm-title">
-                <span>HIERARCHICAL STATE: <strong id="mainStateText" style="color:#d4af37;">WAITING</strong></span>
+                <span>HIERARCHICAL STATE: <strong id="mainStateText" style="color:var(--gold);">WAITING</strong></span>
                 <span id="progressText">0% PROFILED</span>
             </div>
             <div class="progress-bar-bg"><div class="progress-bar-fill" id="hfsmProgress"></div></div>
@@ -133,22 +254,22 @@
             <div class="form-group"><label>Identifier Awal (Username / Email)</label><input type="text" id="init-identifier" placeholder="contoh: johndoe_99"></div>
             <div class="form-group"><label>Catatan Singkat</label><textarea id="init-notes" rows="3" placeholder="Konteks awal..."></textarea></div>
             <button class="btn-execute" id="btn-init" onclick="submitInisiasi()">Daftarkan Target Baru</button>
-            <div id="log-inisiasi" class="status-log">Sistem siap.</div>
+            <div id="log-inisiasi" class="status-log">Sistem siap menerima input subjek.</div>
         </div>
 
         <div id="tab-footprint" class="tab-content">
             <div class="form-group"><label>Platform</label><input type="text" id="fp-platform"></div>
             <div class="form-group"><label>URL Temuan Jejak</label><input type="text" id="fp-url"></div>
             <div class="form-group"><label>Kategori Sub-State RECON</label>
-                <select id="fp-kategori"><option value="Sosial">Sosial</option><option value="Profesional">Profesional</option><option value="Akademik">Akademik</option><option value="Anonim">Anonim</option></select>
+                <select id="fp-kategori"><option value="Sosial">Sosial (Media Sosial/Gaya Hidup)</option><option value="Profesional">Profesional (Karir/LinkedIn)</option><option value="Akademik">Akademik (Kampus/Publikasi)</option><option value="Anonim">Anonim (Forum Gelap)</option></select>
             </div>
-            <div class="form-group"><label>Validitas Temuan</label><select id="fp-validitas"><option value="High">Tinggi</option><option value="Medium">Sedang</option><option value="Low">Rendah</option></select></div>
+            <div class="form-group"><label>Validitas Temuan</label><select id="fp-validitas"><option value="High">Tinggi (Valid/Terverifikasi)</option><option value="Medium">Sedang (Kemungkinan Besar)</option><option value="Low">Rendah (Spekulatif)</option></select></div>
             <button class="btn-execute" id="btn-fp" onclick="submitFootprint()">Tambahkan Jejak & Update HFSM</button>
             <div id="log-footprint" class="status-log">Menunggu input repositori digital.</div>
         </div>
 
         <div id="tab-behavior" class="tab-content">
-            <div class="form-group"><label>Pola Waktu</label><input type="text" id="bh-waktu"></div>
+            <div class="form-group"><label>Pola Waktu Aktivitas</label><input type="text" id="bh-waktu"></div>
             <div class="form-group"><label>Gaya Komunikasi</label><input type="text" id="bh-gaya"></div>
             <div class="form-group"><label>Titik Rentan Psikologis</label><textarea id="bh-rentan" rows="2"></textarea></div>
             <div class="form-group"><label>Minat Spesifik</label><input type="text" id="bh-minat"></div>
@@ -157,32 +278,47 @@
         </div>
 
         <div id="tab-execution" class="tab-content">
-            <div class="form-group"><label>Vektor Pendekatan</label><select id="ex-vektor"><option value="Phishing via Email">Phishing Email</option><option value="Baiting LinkedIn">Baiting LinkedIn</option><option value="Chat Messaging">Direct Message</option></select></div>
+            <div class="form-group"><label>Vektor Pendekatan</label><select id="ex-vektor"><option value="Phishing via Email">Phishing Email</option><option value="Baiting LinkedIn">Baiting LinkedIn</option><option value="Chat Messaging">Direct Message (WhatsApp/Telegram)</option></select></div>
             <div class="form-group">
                 <label>Skenario Narasi Pancingan (Pretexting)</label>
-                <button class="btn-execute btn-ai" id="btn-ai-gen" onclick="generateAIPrompt()"><span>✨</span> Auto-Generate Narasi Pretexting</button>
-                <textarea id="ex-narasi" rows="8" placeholder="Ketik manual atau gunakan AI..."></textarea>
+                <button class="btn-execute btn-ai" id="btn-ai-gen" onclick="generateAIPrompt()">
+                    <span style="font-size:1.2em;">✨</span> Auto-Generate Narasi dengan AI
+                </button>
+                <textarea id="ex-narasi" rows="8" placeholder="Ketik manual atau gunakan AI untuk merangkai teks berdasarkan profil psikologis..."></textarea>
             </div>
             <div class="form-group"><label>Probabilitas Sukses</label><select id="ex-probabilitas"><option value="90%">Sangat Tinggi (~90%)</option><option value="60%">Moderat (~60%)</option><option value="30%">Rendah (~30%)</option></select></div>
             <button class="btn-execute" id="btn-ex" onclick="submitExecution()">Kunci Skenario Eksekusi (PROFILED)</button>
             <div id="log-execution" class="status-log">Menyusun hipotesis eksekusi akhir.</div>
         </div>
 
-        <div id="tab-visual" class="tab-content"><div id="networkGraph"></div><button class="btn-execute" style="margin-top: 15px; background-color: #252525; color: #d4af37;" onclick="renderVisualMap()">🔄 Muat Ulang Peta</button></div>
-        <div id="tab-timeline" class="tab-content"><div id="timelineBoard"></div><button class="btn-execute" style="margin-top: 15px; background-color: #252525; color: #d4af37;" onclick="renderTimeline()">⏳ Segarkan Narasi</button></div>
-        <div id="tab-dossier" class="tab-content"><button class="btn-execute" style="background-color: #252525; color: #d4af37; margin-bottom: 20px;" onclick="generateDossier()">📄 Kumpulkan Data Dossier</button><div id="dossierPaper"></div><button id="btn-print" class="btn-execute" style="margin-top: 20px; display: none;" onclick="window.print()">🖨️ Cetak PDF</button></div>
+        <div id="tab-visual" class="tab-content">
+            <div id="networkGraph"></div>
+            <button class="btn-execute" style="margin-top: 20px; background-color: var(--bg-input); color: var(--gold); border: 1px solid var(--border);" onclick="renderVisualMap()">🔄 Muat Ulang Peta Hubungan</button>
+        </div>
+
+        <div id="tab-timeline" class="tab-content">
+            <div id="timelineBoard"></div>
+            <button class="btn-execute" style="margin-top: 20px; background-color: var(--bg-input); color: var(--gold); border: 1px solid var(--border);" onclick="renderTimeline()">⏳ Segarkan Narasi Garis Waktu</button>
+        </div>
+
+        <div id="tab-dossier" class="tab-content">
+            <p style="font-size: 0.95em; color: var(--text-muted); margin-bottom: 20px;">Kompilasi laporan eksekutif siap cetak/ekspor PDF. Nama subjek pelapor/korban sebaiknya disensor sebelum diekspor.</p>
+            <button class="btn-execute" style="background-color: var(--bg-input); color: var(--gold); border: 1px solid var(--border); margin-bottom: 20px;" onclick="generateDossier()">📄 Ekstrak Laporan Forensik</button>
+            <div id="dossierPaper"></div>
+            <button id="btn-print" class="btn-execute" style="margin-top: 20px; display: none;" onclick="window.print()">🖨️ Cetak / Simpan sebagai PDF</button>
+        </div>
 
         <div id="tab-linguistic" class="tab-content">
-            <p style="font-size: 0.9em; color: #aaa; margin-bottom: 15px; border-left: 2px solid #ff5555; padding-left: 10px;">
-                <strong>PROSEDUR AUDIT ETIKA:</strong> Tempelkan (paste) salinan percakapan mentah dari WhatsApp, Instagram, atau Forum antara Target (Dosen) dan Entitas B (Mahasiswa). Sistem AI akan memindai pergeseran batas profesional dan indikasi <em>grooming</em>.
+            <p style="font-size: 0.9em; color: #ccc; margin-bottom: 20px; border-left: 3px solid var(--red); padding-left: 15px; line-height: 1.5; background: rgba(255,85,85,0.05); padding-top: 10px; padding-bottom: 10px; border-radius: 0 6px 6px 0;">
+                <strong>PROSEDUR AUDIT ETIKA:</strong> Tempelkan (paste) salinan percakapan mentah dari WhatsApp, Instagram, atau Forum antara Target (Figur Otoritas/Dosen) dan Entitas B (Mahasiswa). Mesin kognitif akan memindai pergeseran batas profesional dan indikasi manipulasi (Grooming).
             </p>
             <div class="form-group">
                 <textarea id="ling-sample" rows="10" placeholder="Contoh:&#10;[14:20] Target: Bimbingan hari ini kita pindah ke kafe senja saja ya, jangan di kampus biar lebih santai...&#10;[14:21] Mahasiswa: Baik Pak, jam berapa ya?&#10;[14:23] Target: Jam 7 malam saja. Pakaiannya yang cantik ya."></textarea>
             </div>
             <button class="btn-execute btn-ai-red" id="btn-ling-gen" onclick="generateLinguisticAnalysis()">
-                <span>🚨</span> Pindai Red Flags Percakapan
+                <span style="font-size:1.2em;">🚨</span> Pindai Red Flags Percakapan
             </button>
-            <div id="log-linguistic" class="status-log">Menunggu sampel teks untuk diaudit.</div>
+            <div id="log-linguistic" class="status-log">Menunggu sampel teks untuk diaudit secara forensik.</div>
             
             <div id="ling-result"></div>
         </div>
@@ -214,7 +350,7 @@
             if (result.status === "success") {
                 SESSION_TOKEN = key; 
                 document.getElementById("loginScreen").style.display = "none";
-                document.getElementById("mainApp").style.display = "flex";
+                document.getElementById("mainApp").style.display = "block"; // Ubah menjadi block agar menyesuaikan wrapper
                 await loadTargetDropdown();
             } else { throw new Error(result.message); }
         } catch (error) { msgEl.innerText = error.message; document.getElementById("authKey").value = ""; } 
@@ -230,11 +366,11 @@
             const response = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
             const result = await response.json();
             if (result.status === "success") {
-                if(logEl) { logEl.style.color = "#55ff55"; logEl.innerText = `[BERHASIL] ${result.message}`; }
+                if(logEl) { logEl.style.color = "var(--green)"; logEl.innerText = `[BERHASIL] ${result.message}`; }
                 return result;
             } throw new Error(result.message);
         } catch (error) {
-            if(logEl) { logEl.style.color = "#ff5555"; logEl.innerText = `[ERROR] ${error.message}`; }
+            if(logEl) { logEl.style.color = "var(--red)"; logEl.innerText = `[ERROR] ${error.message}`; }
             return null;
         } finally { if(btn) btn.disabled = false; }
     }
@@ -269,10 +405,9 @@
         CURRENT_TARGET_ID = targetId;
         const picker = document.getElementById("targetPicker");
         const isNone = (targetId === "NONE");
-        picker.style.color = isNone ? "#ff5555" : "#55ff55";
+        picker.style.color = isNone ? "var(--red)" : "var(--green)";
         document.getElementById("btn-wipe").style.display = isNone ? "none" : "block"; 
         
-        // Menambahkan menu-linguistic ke array yang di-toggle disable-nya
         const menus = ["menu-footprint", "menu-behavior", "menu-execution", "menu-visual", "menu-timeline", "menu-dossier", "menu-linguistic"];
         menus.forEach(menu => document.getElementById(menu).disabled = isNone);
         
@@ -295,7 +430,10 @@
                 document.getElementById("mainStateText").innerText = result.main_state;
                 const barFill = document.getElementById("hfsmProgress");
                 barFill.style.width = `${result.progress}%`;
-                if(result.progress < 50) barFill.style.backgroundColor = "#ff5555"; else if(result.progress < 100) barFill.style.backgroundColor = "#d4af37"; else barFill.style.backgroundColor = "#55ff55"; 
+                
+                if(result.progress < 50) barFill.style.backgroundColor = "var(--red)"; 
+                else if(result.progress < 100) barFill.style.backgroundColor = "var(--gold)"; 
+                else barFill.style.backgroundColor = "var(--green)"; 
 
                 const m = result.hfsm_matrix;
                 const toggleBadge = (id, isActive, actClass) => { const el = document.getElementById(id); if(isActive) { el.classList.add("active", actClass); } else { el.classList.remove("active", "active-recon", "active-bhv", "active-exc"); } };
@@ -308,7 +446,7 @@
 
     async function submitInisiasi() {
         const nama = document.getElementById("init-nama").value; const identifier = document.getElementById("init-identifier").value; const notes = document.getElementById("init-notes").value;
-        if (!nama || !identifier) return alert("Wajib diisi!");
+        if (!nama || !identifier) return alert("Nama dan Identifier wajib diisi!");
         const res = await sendToEngine({ action: "ADD_TARGET", data: { nama, identifier, notes } }, "log-inisiasi", document.getElementById("btn-init"));
         if (res) { document.getElementById("init-nama").value=''; document.getElementById("init-identifier").value=''; document.getElementById("init-notes").value=''; await loadTargetDropdown(); switchActiveTarget(res.target_id); }
     }
@@ -331,15 +469,14 @@
     async function generateAIPrompt() {
         if (CURRENT_TARGET_ID === "NONE") return alert("Pilih target terlebih dahulu!");
         const btnAI = document.getElementById("btn-ai-gen"); const logExec = document.getElementById("log-execution"); const narasiArea = document.getElementById("ex-narasi");
-        btnAI.disabled = true; btnAI.innerHTML = "🧠 AI Sedang Menyusun Strategi Pretexting..."; logExec.style.color = "#d4af37"; logExec.innerText = "Mengirim profil ke Gemini...";
+        btnAI.disabled = true; btnAI.innerHTML = "🧠 Menyusun Strategi Pretexting..."; logExec.style.color = "var(--gold)"; logExec.innerText = "Mengirim profil ke mesin AI...";
         try {
             const res = await sendToEngine({ action: "GENERATE_AI_PRETEXT", target_id: CURRENT_TARGET_ID }, "log-execution", null);
-            if (res && res.generated_text) { narasiArea.value = res.generated_text.trim(); logExec.style.color = "#55ff55"; logExec.innerText = "[SUCCESS] Narasi AI berhasil di-generate."; }
-        } catch(e) { logExec.style.color = "#ff5555"; logExec.innerText = "[ERROR] AI gagal membuat narasi."; } 
-        finally { btnAI.disabled = false; btnAI.innerHTML = "<span>✨</span> Auto-Generate Narasi Pretexting"; }
+            if (res && res.generated_text) { narasiArea.value = res.generated_text.trim(); logExec.style.color = "var(--green)"; logExec.innerText = "[SUCCESS] Narasi AI berhasil disintesis."; }
+        } catch(e) { logExec.style.color = "var(--red)"; logExec.innerText = "[ERROR] AI gagal membuat narasi."; } 
+        finally { btnAI.disabled = false; btnAI.innerHTML = "<span style='font-size:1.2em;'>✨</span> Auto-Generate Narasi dengan AI"; }
     }
 
-    // --- FUNGSI BARU: FORENSIK BAHASA (TAB 8) ---
     async function generateLinguisticAnalysis() {
         const sampleText = document.getElementById("ling-sample").value;
         if (!sampleText) return alert("Tempelkan teks percakapan terlebih dahulu!");
@@ -349,42 +486,41 @@
         const resultArea = document.getElementById("ling-result");
 
         btnLing.disabled = true;
-        btnLing.innerHTML = "🧠 Memindai Indikator Grooming & Manipulasi...";
-        logLing.style.color = "#d4af37";
-        logLing.innerText = "Melakukan audit bahasa ke mesin kognitif Gemini...";
+        btnLing.innerHTML = "🧠 Memindai Indikator Manipulasi...";
+        logLing.style.color = "var(--gold)";
+        logLing.innerText = "Melakukan audit forensik bahasa ke mesin kognitif...";
         resultArea.style.display = "none";
         resultArea.innerHTML = "";
 
         try {
             const res = await sendToEngine({ action: "ANALYZE_LINGUISTIC", text_sample: sampleText }, "log-linguistic", null);
             if (res && res.analysis_result) {
-                // Menampilkan hasil yang di-generate Gemini
-                resultArea.innerHTML = res.analysis_result.replace(/\n/g, "<br>"); // Mengubah line break JSON ke HTML
+                resultArea.innerHTML = res.analysis_result.replace(/\n/g, "<br>");
                 resultArea.style.display = "block";
-                logLing.style.color = "#55ff55";
-                logLing.innerText = "[WARNING DETECTED] Audit forensik bahasa selesai diurai.";
+                logLing.style.color = "var(--red)";
+                logLing.innerText = "[WARNING] Audit forensik bahasa selesai diurai.";
             }
         } catch(e) {
-            logLing.style.color = "#ff5555";
+            logLing.style.color = "var(--red)";
             logLing.innerText = "[ERROR] Gagal menganalisis teks.";
         } finally {
             btnLing.disabled = false;
-            btnLing.innerHTML = "<span>🚨</span> Pindai Red Flags Percakapan";
+            btnLing.innerHTML = "<span style='font-size:1.2em;'>🚨</span> Pindai Red Flags Percakapan";
         }
     }
 
     async function renderVisualMap() {
-        const container = document.getElementById("networkGraph"); container.innerHTML = "<p style='padding:20px; color:#aaa;'>Menarik struktur relasi...</p>";
+        const container = document.getElementById("networkGraph"); container.innerHTML = "<p style='padding:20px; color:#aaa; font-family:Courier New;'>Menarik struktur relasi dari database...</p>";
         if (CURRENT_TARGET_ID === "NONE") return;
         try {
             const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "GET_GRAPH_DATA", target_id: CURRENT_TARGET_ID, auth_token: SESSION_TOKEN }) });
             const result = await res.json();
-            if (result.status === "success") { networkInstance = new vis.Network(container, { nodes: new vis.DataSet(result.nodes), edges: new vis.DataSet(result.edges) }, { nodes: { font: { color: '#ffffff' }, borderWidth: 2 }, edges: { color: { color: '#555' }, arrows: 'to' } }); }
-        } catch (e) { container.innerHTML = "<p style='color:#ff5555;'>Gagal merender grafik.</p>"; }
+            if (result.status === "success") { networkInstance = new vis.Network(container, { nodes: new vis.DataSet(result.nodes), edges: new vis.DataSet(result.edges) }, { nodes: { font: { color: '#ffffff' }, borderWidth: 2 }, edges: { color: { color: '#666' }, arrows: 'to' } }); }
+        } catch (e) { container.innerHTML = "<p style='color:var(--red);'>Gagal merender grafik.</p>"; }
     }
 
     async function renderTimeline() {
-        const board = document.getElementById("timelineBoard"); board.innerHTML = "<p style='color:#d4af37;'>Menyusun ulang kronologi...</p>";
+        const board = document.getElementById("timelineBoard"); board.innerHTML = "<p style='color:var(--gold); font-family:Courier New;'>Menyusun ulang kronologi...</p>";
         if (CURRENT_TARGET_ID === "NONE") return;
         try {
             const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "GET_TIMELINE_DATA", target_id: CURRENT_TARGET_ID, auth_token: SESSION_TOKEN }) });
@@ -394,8 +530,8 @@
                 let html = '<div class="timeline-container">';
                 result.timeline.forEach(item => { html += `<div class="timeline-item ${item.type}"><span class="timeline-date">[ ${item.date} ]</span><div class="timeline-title">${item.title}</div><div class="timeline-desc">${item.desc}</div></div>`; });
                 board.innerHTML = html + '</div>';
-            } else { board.innerHTML = "<p style='color:#aaa;'>Belum ada data kronologis.</p>"; }
-        } catch (e) { board.innerHTML = "<p style='color:#ff5555;'>Gagal menarik narasi.</p>"; }
+            } else { board.innerHTML = "<p style='color:var(--text-muted); font-family:Courier New;'>Belum ada data kronologis tercatat.</p>"; }
+        } catch (e) { board.innerHTML = "<p style='color:var(--red);'>Gagal menarik narasi.</p>"; }
     }
 
     async function generateDossier() {
