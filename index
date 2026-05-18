@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EarlytaOSint | Profiler</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #1e1e1e;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 400px;
+            border-top: 3px solid #d4af37; /* Aksen warna senja/emas */
+        }
+        h2 { margin-top: 0; color: #d4af37; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-size: 0.9em; }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            background-color: #2c2c2c;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #d4af37;
+            color: #121212;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-family: inherit;
+        }
+        button:hover { background-color: #b5952f; }
+        #statusMessage {
+            margin-top: 15px;
+            font-size: 0.85em;
+            text-align: center;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>[ EarlytaOSint ]</h2>
+    <p style="font-size: 0.8em; color: #888;">State: WAITING_FOR_INPUT</p>
+    
+    <div class="form-group">
+        <label for="identifier">Identifier Awal (Username/Email)</label>
+        <input type="text" id="identifier" placeholder="contoh: target_senja99" autocomplete="off">
+    </div>
+    
+    <div class="form-group">
+        <label for="notes">Catatan Inisiasi</label>
+        <textarea id="notes" rows="3" placeholder="Konteks penelusuran..."></textarea>
+    </div>
+    
+    <button id="btnSubmit" onclick="inisiasiTarget()">Inisiasi Profil</button>
+    
+    <div id="statusMessage">Sistem siap.</div>
+</div>
+
+<script>
+    // MASUKKAN URL WEB APP GAS-MU DI SINI
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbykgN0YNiaV91FgrG-sIJlyQi0k4cncNF7OgT2YURr1t5F6cyILps4TY8fyw-YT69N-4A/exec";
+
+    async function inisiasiTarget() {
+        const identifier = document.getElementById('identifier').value;
+        const notes = document.getElementById('notes').value;
+        const statusEl = document.getElementById('statusMessage');
+        const btn = document.getElementById('btnSubmit');
+
+        if (!identifier) {
+            statusEl.style.color = "#ff5555";
+            statusEl.innerText = "Error: Identifier tidak boleh kosong.";
+            return;
+        }
+
+        // Mengubah UI saat loading
+        btn.disabled = true;
+        btn.innerText = "Menghubungkan ke Engine...";
+        statusEl.style.color = "#888";
+        statusEl.innerText = "Transisi ke State: INITIAL...";
+
+        // Menyiapkan paket data untuk dikirim
+        const payload = {
+            action: "ADD_TARGET",
+            data: { identifier: identifier, notes: notes }
+        };
+
+        try {
+            // Mengirim data menggunakan POST method (tanpa mode no-cors agar bisa baca respon)
+            const response = await fetch(GAS_URL, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (result.status === "success") {
+                statusEl.style.color = "#55ff55";
+                statusEl.innerText = `Sukses! Target [${result.target_id}] berada di State: ${result.current_state}`;
+                document.getElementById('identifier').value = '';
+                document.getElementById('notes').value = '';
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error) {
+            statusEl.style.color = "#ff5555";
+            statusEl.innerText = "Gagal menghubungi server. Cek console log.";
+            console.error(error);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Inisiasi Profil";
+        }
+    }
+</script>
+
+</body>
+</html>
