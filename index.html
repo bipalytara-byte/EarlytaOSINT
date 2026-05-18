@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EarlytaOSint | Visual Dashboard</title>
+    <title>EarlytaOSint | Executive Dashboard</title>
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style>
         body { background-color: #0f0f0f; color: #e0e0e0; font-family: 'Courier New', Courier, monospace; margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .dashboard { background-color: #1a1a1a; width: 100%; max-width: 850px; border-radius: 8px; box-shadow: 0 4px 25px rgba(0,0,0,0.7); border-top: 4px solid #d4af37; overflow: hidden; }
+        .dashboard { background-color: #1a1a1a; width: 100%; max-width: 900px; border-radius: 8px; box-shadow: 0 4px 25px rgba(0,0,0,0.7); border-top: 4px solid #d4af37; overflow: hidden; }
         .header { padding: 20px; background-color: #111; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .header h1 { margin: 0; color: #d4af37; font-size: 1.4em; }
         .selector-zone { display: flex; align-items: center; gap: 10px; }
@@ -30,15 +30,26 @@
         button:disabled { background-color: #444 !important; color: #888; cursor: not-allowed; }
         .status-log { margin-top: 15px; padding: 10px; background-color: #111; border-radius: 4px; font-size: 0.8em; color: #888; text-align: center; }
         
-        /* Area Canvas Network Graph */
         #networkGraph { width: 100%; height: 450px; background-color: #111; border: 1px solid #333; border-radius: 4px; margin-top: 10px; }
+
+        /* GAYA CSS UNTUK GARIS WAKTU NARATIF */
+        .timeline-container { position: relative; max-width: 100%; margin: 20px 0; padding-left: 20px; border-left: 2px solid #444; }
+        .timeline-item { position: relative; margin-bottom: 25px; padding-left: 20px; }
+        .timeline-item::before { content: ''; position: absolute; left: -27px; top: 3px; width: 12px; height: 12px; border-radius: 50%; background-color: #d4af37; border: 2px solid #1a1a1a; box-shadow: 0 0 8px rgba(212, 175, 55, 0.5); }
+        .timeline-item.inisiasi::before { background-color: #ff5555; box-shadow: 0 0 8px rgba(255, 85, 85, 0.5); }
+        .timeline-item.jejak::before { background-color: #d4af37; }
+        .timeline-item.perilaku::before { background-color: #5555ff; box-shadow: 0 0 8px rgba(85, 85, 255, 0.5); }
+        .timeline-item.eksekusi::before { background-color: #55ff55; box-shadow: 0 0 8px rgba(85, 255, 85, 0.5); }
+        .timeline-date { font-size: 0.75em; color: #d4af37; margin-bottom: 4px; display: block; }
+        .timeline-title { font-weight: bold; color: #fff; margin-bottom: 5px; font-size: 1.05em; }
+        .timeline-desc { font-size: 0.9em; color: #aaa; line-height: 1.5; background: #222; padding: 10px; border-radius: 4px; border-left: 3px solid #444; }
     </style>
 </head>
 <body>
 
 <div class="dashboard">
     <div class="header">
-        <h1>[ EarlytaOSint v1.2 ]</h1>
+        <h1>[ EarlytaOSint v1.3 ]</h1>
         <div class="selector-zone">
             <label style="display:inline; margin:0;">Target Aktif:</label>
             <select id="targetPicker" class="target-picker" onchange="switchActiveTarget(this.value)">
@@ -48,109 +59,59 @@
     </div>
 
     <div class="nav-tabs">
-        <button class="tab-link active" onclick="switchTab(event, 'tab-inisiasi')">1. Registrasi</button>
+        <button class="tab-link active" onclick="switchTab(event, 'tab-inisiasi')">1. Inisiasi</button>
         <button class="tab-link" id="menu-footprint" onclick="switchTab(event, 'tab-footprint')" disabled>2. Footprint</button>
         <button class="tab-link" id="menu-behavior" onclick="switchTab(event, 'tab-behavior')" disabled>3. Behavioral</button>
         <button class="tab-link" id="menu-execution" onclick="switchTab(event, 'tab-execution')" disabled>4. Execution</button>
-        <button class="tab-link" id="menu-visual" onclick="switchTab(event, 'tab-visual')" disabled>5. Visual Map 📊</button>
+        <button class="tab-link" id="menu-visual" onclick="switchTab(event, 'tab-visual')" disabled>5. Map 📊</button>
+        <button class="tab-link" id="menu-timeline" onclick="switchTab(event, 'tab-timeline')" disabled>6. Garis Waktu ⏳</button>
     </div>
 
     <div id="tab-inisiasi" class="tab-content active">
-        <div class="form-group">
-            <label>Nama Target (Nama Asli / Inisial / Samaran)</label>
-            <input type="text" id="init-nama" placeholder="contoh: John Doe">
-        </div>
-        <div class="form-group">
-            <label>Identifier Awal (Username / Email Utama)</label>
-            <input type="text" id="init-identifier" placeholder="contoh: johndoe_99">
-        </div>
-        <div class="form-group">
-            <label>Catatan Singkat</label>
-            <textarea id="init-notes" rows="3" placeholder="Konieks awal..."></textarea>
-        </div>
+        <div class="form-group"><label>Nama Target</label><input type="text" id="init-nama" placeholder="contoh: John Doe"></div>
+        <div class="form-group"><label>Identifier Awal</label><input type="text" id="init-identifier" placeholder="contoh: johndoe_99"></div>
+        <div class="form-group"><label>Catatan Singkat</label><textarea id="init-notes" rows="3" placeholder="Konteks awal..."></textarea></div>
         <button class="btn-execute" id="btn-init" onclick="submitInisiasi()">Daftarkan Target Baru</button>
         <div id="log-inisiasi" class="status-log">Sistem siap.</div>
     </div>
 
     <div id="tab-footprint" class="tab-content">
-        <div class="form-group">
-            <label>Platform</label>
-            <input type="text" id="fp-platform" placeholder="GitHub, LinkedIn, Instagram, dsb.">
-        </div>
-        <div class="form-group">
-            <label>URL Temuan Jejak</label>
-            <input type="text" id="fp-url" placeholder="https://...">
-        </div>
-        <div class="form-group">
-            <label>Kategori Jejak</label>
-            <select id="fp-kategori">
-                <option value="Sosial">Sosial / Hiburan</option>
-                <option value="Profesional">Profesional / Kerja</option>
-                <option value="Akademik">Akademik / Kampus</option>
-                <option value="Anonim">Forum / Jejak Anonim</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>Validitas Temuan</label>
-            <select id="fp-validitas">
-                <option value="High">Tinggi (Akurat Terverifikasi)</option>
-                <option value="Medium">Sedang (Butuh Konfirmasi)</option>
-                <option value="Low">Rendah (Kemungkinan Kliping Nama)</option>
-            </select>
-        </div>
+        <div class="form-group"><label>Platform</label><input type="text" id="fp-platform"></div>
+        <div class="form-group"><label>URL Temuan Jejak</label><input type="text" id="fp-url"></div>
+        <div class="form-group"><label>Kategori Jejak</label><select id="fp-kategori"><option value="Sosial">Sosial</option><option value="Profesional">Profesional</option><option value="Anonim">Anonim</option></select></div>
+        <div class="form-group"><label>Validitas Temuan</label><select id="fp-validitas"><option value="High">Tinggi</option><option value="Medium">Sedang</option><option value="Low">Rendah</option></select></div>
         <button class="btn-execute" id="btn-fp" onclick="submitFootprint()">Tambahkan Jejak Tambahan</button>
         <div id="log-footprint" class="status-log">Menunggu input repositori digital.</div>
     </div>
 
     <div id="tab-behavior" class="tab-content">
-        <div class="form-group">
-            <label>Pola Waktu Aktif Target</label>
-            <input type="text" id="bh-waktu" placeholder="Contoh: Jam 01.00 - 04.00 WIB">
-        </div>
-        <div class="form-group">
-            <label>Gaya Komunikasi / Karakter Bahasa</label>
-            <input type="text" id="bh-gaya" placeholder="Contoh: Formal, Sinis, Puitis">
-        </div>
-        <div class="form-group">
-            <label>Titik Rentan Psikologis (Vulnerability)</label>
-            <textarea id="bh-rentan" rows="2" placeholder="Kelemahan emosional/psikologis..."></textarea>
-        </div>
-        <div class="form-group">
-            <label>Minat Spesifik / Obesesi (Akan muncul di Papan Visual)</label>
-            <input type="text" id="bh-minat" placeholder="Contoh: Kamera analog, RPG Maker, OSINT local">
-        </div>
+        <div class="form-group"><label>Pola Waktu</label><input type="text" id="bh-waktu"></div>
+        <div class="form-group"><label>Gaya Komunikasi</label><input type="text" id="bh-gaya"></div>
+        <div class="form-group"><label>Titik Rentan Psikologis</label><textarea id="bh-rentan" rows="2"></textarea></div>
+        <div class="form-group"><label>Minat Spesifik</label><input type="text" id="bh-minat"></div>
         <button class="btn-execute" id="btn-bh" onclick="submitBehavior()">Tambahkan Catatan Perilaku</button>
         <div id="log-behavior" class="status-log">Siap menganalisis anomali perilaku target.</div>
     </div>
 
     <div id="tab-execution" class="tab-content">
-        <div class="form-group">
-            <label>Vektor Pendekatan Simulasi</label>
-            <select id="ex-vektor">
-                <option value="Phishing via Email">Pengujian Phishing Skenario (Email)</option>
-                <option value="Baiting via Professional Network">Rekayasa Sosial Jaringan Profesional (LinkedIn)</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>Rancangan Skenario Narasi (Pretexting)</label>
-            <textarea id="ex-narasi" rows="4" placeholder="Umpan psikologis..."></textarea>
-        </div>
-        <div class="form-group">
-            <label>Estimasi Keberhasilan</label>
-            <select id="ex-probabilitas">
-                <option value="90%">Sangat Tinggi (~90%)</option>
-                <option value="60%">Moderat (~60%)</option>
-                <option value="30%">Rendah (~30%)</option>
-            </select>
-        </div>
+        <div class="form-group"><label>Vektor Pendekatan</label><select id="ex-vektor"><option value="Phishing via Email">Phishing Email</option><option value="Baiting LinkedIn">Baiting LinkedIn</option></select></div>
+        <div class="form-group"><label>Skenario Narasi</label><textarea id="ex-narasi" rows="4"></textarea></div>
+        <div class="form-group"><label>Probabilitas Sukses</label><select id="ex-probabilitas"><option value="90%">Sangat Tinggi (~90%)</option><option value="60%">Moderat (~60%)</option><option value="30%">Rendah (~30%)</option></select></div>
         <button class="btn-execute" id="btn-ex" onclick="submitExecution()">Simpan Skenario Teoretis</button>
         <div id="log-execution" class="status-log">Menyusun hipotesis eksekusi akhir.</div>
     </div>
 
     <div id="tab-visual" class="tab-content">
-        <p style="font-size: 0.9em; color: #888; margin: 0;">Peta Relasi Hubungan Target. Kamu bisa menggeser, memperbesar (scroll), atau mengklik lingkaran node data.</p>
         <div id="networkGraph"></div>
         <button class="btn-execute" style="margin-top: 15px; background-color: #252525; color: #d4af37; border: 1px solid #333;" onclick="renderVisualMap()">🔄 Muat Ulang Peta Hubungan</button>
+    </div>
+
+    <div id="tab-timeline" class="tab-content">
+        <p style="font-size: 0.9em; color: #888; margin-bottom: 20px; font-style: italic;">"Jejak mungkin bisa dihapus, tetapi narasi akan selalu menyisakan benang merah..."</p>
+        <div id="timelineBoard">
+            <p style='color:#aaa;'>Silakan muat data kronologis.</p>
+        </div>
+        <button class="btn-execute" style="margin-top: 15px; background-color: #252525; color: #d4af37; border: 1px solid #333;" onclick="renderTimeline()">⏳ Segarkan Narasi Garis Waktu</button>
     </div>
 </div>
 
@@ -169,8 +130,8 @@
         document.getElementById(tabId).className += " active";
         evt.currentTarget.className += " active";
         
-        // Trigger otomatis render grafik jika user membuka Tab Visual
         if(tabId === 'tab-visual') { renderVisualMap(); }
+        if(tabId === 'tab-timeline') { renderTimeline(); }
     }
 
     async function loadTargetDropdown() {
@@ -183,7 +144,7 @@
                 result.targets.forEach(t => {
                     const option = document.createElement("option");
                     option.value = t.id;
-                    option.text = `${t.nama} (${t.id}) [${t.state}]`;
+                    option.text = `${t.nama} (${t.id})`;
                     picker.appendChild(option);
                 });
                 picker.value = CURRENT_TARGET_ID;
@@ -201,122 +162,99 @@
         document.getElementById("menu-behavior").disabled = isNone;
         document.getElementById("menu-execution").disabled = isNone;
         document.getElementById("menu-visual").disabled = isNone;
+        document.getElementById("menu-timeline").disabled = isNone;
         
-        if(!isNone && document.getElementById("tab-visual").classList.contains("active")) {
-            renderVisualMap();
-        }
+        if(!isNone && document.getElementById("tab-visual").classList.contains("active")) renderVisualMap();
+        if(!isNone && document.getElementById("tab-timeline").classList.contains("active")) renderTimeline();
     }
 
     async function sendToEngine(payload, logId, btn) {
         const logEl = document.getElementById(logId);
         if(btn) btn.disabled = true;
-        logEl.innerText = "Mengirim data ke database...";
+        logEl.innerText = "Mengirim data...";
         try {
             const response = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
             const result = await response.json();
             if (result.status === "success") {
-                logEl.style.color = "#55ff55";
-                logEl.innerText = `[BERHASIL] ${result.message}`;
-                return result;
-            }
-            throw new Error(result.message);
+                logEl.style.color = "#55ff55"; logEl.innerText = `[BERHASIL] ${result.message}`; return result;
+            } throw new Error(result.message);
         } catch (error) {
-            logEl.style.color = "#ff5555";
-            logEl.innerText = `[ERROR] Masalah komunikasi jaringan.`;
-            return null;
+            logEl.style.color = "#ff5555"; logEl.innerText = `[ERROR] Jaringan terputus.`; return null;
         } finally { if(btn) btn.disabled = false; }
     }
 
+    // --- Fungsi Input (Tab 1-4) sama seperti sebelumnya ---
     async function submitInisiasi() {
-        const nama = document.getElementById("init-nama").value;
-        const identifier = document.getElementById("init-identifier").value;
-        const notes = document.getElementById("init-notes").value;
+        const nama = document.getElementById("init-nama").value; const identifier = document.getElementById("init-identifier").value; const notes = document.getElementById("init-notes").value;
         if (!nama || !identifier) return alert("Nama dan Identifier wajib diisi!");
-
         const res = await sendToEngine({ action: "ADD_TARGET", data: { nama, identifier, notes } }, "log-inisiasi", document.getElementById("btn-init"));
-        if (res) {
-            document.getElementById("init-nama").value = '';
-            document.getElementById("init-identifier").value = '';
-            document.getElementById("init-notes").value = '';
-            await loadTargetDropdown();
-            switchActiveTarget(res.target_id);
-        }
+        if (res) { document.getElementById("init-nama").value=''; document.getElementById("init-identifier").value=''; document.getElementById("init-notes").value=''; await loadTargetDropdown(); switchActiveTarget(res.target_id); }
     }
 
     async function submitFootprint() {
-        if (CURRENT_TARGET_ID === "NONE") return alert("Pilih target dahulu!");
-        const data = {
-            target_id: CURRENT_TARGET_ID,
-            Platform: document.getElementById("fp-platform").value,
-            URL_Temuan: document.getElementById("fp-url").value,
-            Kategori_Jejak: document.getElementById("fp-kategori").value,
-            Validitas: document.getElementById("fp-validitas").value
-        };
+        const data = { target_id: CURRENT_TARGET_ID, Platform: document.getElementById("fp-platform").value, URL_Temuan: document.getElementById("fp-url").value, Kategori_Jejak: document.getElementById("fp-kategori").value, Validitas: document.getElementById("fp-validitas").value };
         const res = await sendToEngine({ action: "ADD_FOOTPRINT", data: data }, "log-footprint", document.getElementById("btn-fp"));
-        if(res) { document.getElementById("fp-platform").value = ''; document.getElementById("fp-url").value = ''; loadTargetDropdown(); }
+        if(res) { document.getElementById("fp-platform").value=''; document.getElementById("fp-url").value=''; }
     }
 
     async function submitBehavior() {
-        if (CURRENT_TARGET_ID === "NONE") return alert("Pilih target dahulu!");
-        const data = {
-            target_id: CURRENT_TARGET_ID,
-            Pola_Waktu: document.getElementById("bh-waktu").value,
-            Gaya_Komunikasi: document.getElementById("bh-gaya").value,
-            Titik_Rentan_Psikologis: document.getElementById("bh-rentan").value,
-            Minat_Spesifik: document.getElementById("bh-minat").value
-        };
+        const data = { target_id: CURRENT_TARGET_ID, Pola_Waktu: document.getElementById("bh-waktu").value, Gaya_Komunikasi: document.getElementById("bh-gaya").value, Titik_Rentan_Psikologis: document.getElementById("bh-rentan").value, Minat_Spesifik: document.getElementById("bh-minat").value };
         const res = await sendToEngine({ action: "ADD_BEHAVIOR", data: data }, "log-behavior", document.getElementById("btn-bh"));
-        if(res) {
-            document.getElementById("bh-waktu").value = ''; document.getElementById("bh-gaya").value = '';
-            document.getElementById("bh-rentan").value = ''; document.getElementById("bh-minat").value = '';
-            loadTargetDropdown();
-        }
+        if(res) { document.getElementById("bh-waktu").value=''; document.getElementById("bh-gaya").value=''; document.getElementById("bh-rentan").value=''; document.getElementById("bh-minat").value=''; }
     }
 
     async function submitExecution() {
-        if (CURRENT_TARGET_ID === "NONE") return alert("Pilih target dahulu!");
-        const data = {
-            target_id: CURRENT_TARGET_ID,
-            Vektor_Pendekatan: document.getElementById("ex-vektor").value,
-            Skenario_Narasi: document.getElementById("ex-narasi").value,
-            Probabilitas_Sukses: document.getElementById("ex-probabilitas").value
-        };
+        const data = { target_id: CURRENT_TARGET_ID, Vektor_Pendekatan: document.getElementById("ex-vektor").value, Skenario_Narasi: document.getElementById("ex-narasi").value, Probabilitas_Sukses: document.getElementById("ex-probabilitas").value };
         const res = await sendToEngine({ action: "ADD_EXECUTION", data: data }, "log-execution", document.getElementById("btn-ex"));
-        if(res) { document.getElementById("ex-narasi").value = ''; loadTargetDropdown(); }
+        if(res) { document.getElementById("ex-narasi").value=''; }
     }
 
-    // FUNGSI UTAMA: MERENDER GRAFIK JARINGAN VISUAL
     async function renderVisualMap() {
         const container = document.getElementById("networkGraph");
-        container.innerHTML = "<p style='padding:20px; color:#aaa;'>Menarik struktur relasi dari matriks database...</p>";
+        container.innerHTML = "<p style='padding:20px; color:#aaa;'>Menarik struktur relasi...</p>";
+        if (CURRENT_TARGET_ID === "NONE") return;
+        try {
+            const response = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "GET_GRAPH_DATA", target_id: CURRENT_TARGET_ID }) });
+            const result = await response.json();
+            if (result.status === "success") {
+                const data = { nodes: new vis.DataSet(result.nodes), edges: new vis.DataSet(result.edges) };
+                const options = { nodes: { font: { color: '#ffffff' }, borderWidth: 2 }, edges: { color: { color: '#555' }, arrows: 'to' } };
+                networkInstance = new vis.Network(container, data, options);
+            }
+        } catch (e) { container.innerHTML = "<p style='color:#ff5555;'>Gagal merender grafik.</p>"; }
+    }
 
+    // FUNGSI BARU: RENDER GARIS WAKTU NARATIF
+    async function renderTimeline() {
+        const board = document.getElementById("timelineBoard");
+        board.innerHTML = "<p style='color:#d4af37;'>Menyusun ulang kronologi investigasi...</p>";
         if (CURRENT_TARGET_ID === "NONE") return;
 
         try {
             const response = await fetch(GAS_URL, {
                 method: "POST",
-                body: JSON.stringify({ action: "GET_GRAPH_DATA", target_id: CURRENT_TARGET_ID })
+                body: JSON.stringify({ action: "GET_TIMELINE_DATA", target_id: CURRENT_TARGET_ID })
             });
             const result = await response.json();
 
-            if (result.status === "success") {
-                const data = {
-                    nodes: new vis.DataSet(result.nodes),
-                    edges: new vis.DataSet(result.edges)
-                };
-
-                const options = {
-                    nodes: { font: { color: '#ffffff', face: 'monospace' }, borderWidth: 2 },
-                    edges: { font: { color: '#888888', size: 10, align: 'top' }, color: { color: '#333333', highlight: '#d4af37' }, arrows: 'to' },
-                    physics: { barnesHut: { gravitationalConstant: -3000, centralGravity: 0.3, springLength: 95 } }
-                };
-
-                // Inisialisasi visualisasi grafik vis.js
-                networkInstance = new vis.Network(container, data, options);
+            if (result.status === "success" && result.timeline.length > 0) {
+                let html = '<div class="timeline-container">';
+                result.timeline.forEach(item => {
+                    html += `
+                        <div class="timeline-item ${item.type}">
+                            <span class="timeline-date">[ ${item.date} ]</span>
+                            <div class="timeline-title">${item.title}</div>
+                            <div class="timeline-desc">${item.desc}</div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                board.innerHTML = html;
+            } else {
+                board.innerHTML = "<p style='color:#aaa;'>Belum ada narasi yang bisa diceritakan dari target ini.</p>";
             }
         } catch (e) {
-            container.innerHTML = "<p style='padding:20px; color:#ff5555;'>Gagal merender grafik jaringan visual.</p>";
-            console.error(e);
+            board.innerHTML = "<p style='color:#ff5555;'>Gagal menarik benang merah narasi.</p>";
         }
     }
 </script>
