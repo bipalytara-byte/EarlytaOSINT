@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EarlytaOSint | AI Matrix</title>
+    <title>EarlytaOSint | Forensic Matrix</title>
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style>
         body { background-color: #0f0f0f; color: #e0e0e0; font-family: 'Courier New', Courier, monospace; margin: 0; padding: 20px; display: flex; justify-content: center; min-height: 100vh; align-items: flex-start;}
@@ -14,7 +14,7 @@
         #loginScreen input:focus { border-color: #ff5555; outline: none; }
         
         #mainApp { display: none; width: 100%; display: flex; justify-content: center;}
-        .dashboard { background-color: #1a1a1a; width: 100%; max-width: 900px; border-radius: 8px; box-shadow: 0 4px 25px rgba(0,0,0,0.7); border-top: 4px solid #d4af37; overflow: hidden; }
+        .dashboard { background-color: #1a1a1a; width: 100%; max-width: 1000px; border-radius: 8px; box-shadow: 0 4px 25px rgba(0,0,0,0.7); border-top: 4px solid #d4af37; overflow: hidden; }
         .header { padding: 20px; background-color: #111; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .header h1 { margin: 0; color: #d4af37; font-size: 1.4em; }
         
@@ -23,7 +23,6 @@
         .btn-wipe { background-color: #8b0000; color: #fff; border: 1px solid #ff5555; padding: 8px 12px; cursor: pointer; font-family: inherit; font-weight: bold; border-radius: 4px; display: none; transition: background 0.3s; }
         .btn-wipe:hover { background-color: #ff5555; color: #000; }
         
-        /* HFSM PANEL */
         #hfsmPanel { background-color: #151515; padding: 15px 25px; border-bottom: 1px solid #333; display: none; }
         .hfsm-title { font-size: 0.8em; color: #888; margin-bottom: 8px; display: flex; justify-content: space-between; }
         .progress-bar-bg { width: 100%; background-color: #222; border-radius: 10px; height: 8px; margin-bottom: 15px; overflow: hidden; border: 1px solid #333; }
@@ -36,9 +35,10 @@
         .badge.active-exc { background-color: #55ff55; border-color: #55ff55; }
         
         .nav-tabs { display: flex; background-color: #151515; border-bottom: 1px solid #333; overflow-x: auto; }
-        .tab-link { flex: 1; padding: 12px; text-align: center; background: none; border: none; color: #888; font-family: inherit; cursor: pointer; transition: all 0.3s; border-bottom: 2px solid transparent; white-space: nowrap; }
+        .tab-link { flex: 1; padding: 12px; text-align: center; background: none; border: none; color: #888; font-family: inherit; cursor: pointer; transition: all 0.3s; border-bottom: 2px solid transparent; white-space: nowrap; font-size: 0.85em;}
         .tab-link:hover { color: #fff; background-color: #202020; }
         .tab-link.active { color: #d4af37; border-bottom: 2px solid #d4af37; background-color: #1a1a1a; font-weight: bold; }
+        
         .tab-content { padding: 25px; display: none; }
         .tab-content.active { display: block; }
         .form-group { margin-bottom: 18px; }
@@ -49,6 +49,8 @@
         button.btn-execute:hover { background-color: #b5952f; }
         button.btn-ai { background-color: #5555ff; color: white; margin-bottom: 15px; border: 1px solid #3333aa; display: flex; align-items: center; justify-content: center; gap: 8px;}
         button.btn-ai:hover { background-color: #3333cc; }
+        button.btn-ai-red { background-color: #aa3333; color: white; margin-bottom: 15px; border: 1px solid #882222; display: flex; align-items: center; justify-content: center; gap: 8px;}
+        button.btn-ai-red:hover { background-color: #cc3333; }
         button:disabled { background-color: #444 !important; color: #888 !important; cursor: not-allowed; border:none; }
         .status-log { margin-top: 15px; padding: 10px; background-color: #111; border-radius: 4px; font-size: 0.8em; color: #888; text-align: center; }
         
@@ -56,15 +58,14 @@
         .timeline-container { position: relative; max-width: 100%; margin: 20px 0; padding-left: 20px; border-left: 2px solid #444; }
         .timeline-item { position: relative; margin-bottom: 25px; padding-left: 20px; }
         .timeline-item::before { content: ''; position: absolute; left: -27px; top: 3px; width: 12px; height: 12px; border-radius: 50%; background-color: #d4af37; border: 2px solid #1a1a1a; box-shadow: 0 0 8px rgba(212, 175, 55, 0.5); }
-        .timeline-item.inisiasi::before { background-color: #ff5555; }
-        .timeline-item.jejak::before { background-color: #d4af37; }
-        .timeline-item.perilaku::before { background-color: #5555ff; }
-        .timeline-item.eksekusi::before { background-color: #55ff55; }
         .timeline-date { font-size: 0.75em; color: #d4af37; margin-bottom: 4px; display: block; }
         .timeline-title { font-weight: bold; color: #fff; margin-bottom: 5px; font-size: 1.05em; }
         .timeline-desc { font-size: 0.9em; color: #aaa; line-height: 1.5; background: #222; padding: 10px; border-radius: 4px; border-left: 3px solid #444; }
         
         #dossierPaper { display: none; background-color: #e0e0e0; color: #121212; padding: 40px; border-radius: 4px; margin-top: 20px; font-family: 'Arial', sans-serif; }
+        
+        /* Area Hasil Forensik */
+        #ling-result { margin-top: 20px; padding: 20px; background-color: #111; border-left: 4px solid #ff5555; display: none; white-space: pre-wrap; font-size: 0.95em; line-height: 1.6; color: #ddd; }
         
         @media print {
             body { background-color: #fff; color: #000; display: block; padding: 0; margin: 0; font-family: 'Arial', sans-serif; }
@@ -90,7 +91,7 @@
 <div id="mainApp">
     <div class="dashboard">
         <div class="header">
-            <h1>[ EarlytaOSint v1.7 AI Edition ]</h1>
+            <h1>[ EarlytaOSint v1.8 Forensic ]</h1>
             <div class="selector-zone">
                 <label style="display:inline; margin:0;">Target Aktif:</label>
                 <select id="targetPicker" class="target-picker" onchange="switchActiveTarget(this.value)">
@@ -124,6 +125,7 @@
             <button class="tab-link" id="menu-visual" onclick="switchTab(event, 'tab-visual')" disabled>5. Map 📊</button>
             <button class="tab-link" id="menu-timeline" onclick="switchTab(event, 'tab-timeline')" disabled>6. Timeline ⏳</button>
             <button class="tab-link" id="menu-dossier" onclick="switchTab(event, 'tab-dossier')" disabled>7. Dossier 📄</button>
+            <button class="tab-link" id="menu-linguistic" onclick="switchTab(event, 'tab-linguistic')" disabled>8. Forensics 🗣️</button>
         </div>
 
         <div id="tab-inisiasi" class="tab-content active">
@@ -155,16 +157,12 @@
         </div>
 
         <div id="tab-execution" class="tab-content">
-            <div class="form-group"><label>Vektor Pendekatan</label><select id="ex-vektor"><option value="Phishing via Email">Phishing Email</option><option value="Baiting LinkedIn">Baiting LinkedIn</option><option value="Chat Messaging">Direct Message (WhatsApp/Telegram)</option></select></div>
-            
+            <div class="form-group"><label>Vektor Pendekatan</label><select id="ex-vektor"><option value="Phishing via Email">Phishing Email</option><option value="Baiting LinkedIn">Baiting LinkedIn</option><option value="Chat Messaging">Direct Message</option></select></div>
             <div class="form-group">
                 <label>Skenario Narasi Pancingan (Pretexting)</label>
-                <button class="btn-execute btn-ai" id="btn-ai-gen" onclick="generateAIPrompt()">
-                    <span>✨</span> Auto-Generate Narasi dengan AI Cognitive
-                </button>
-                <textarea id="ex-narasi" rows="8" placeholder="Ketik manual atau gunakan AI untuk merangkai teks pretexting berdasarkan profil psikologis target..."></textarea>
+                <button class="btn-execute btn-ai" id="btn-ai-gen" onclick="generateAIPrompt()"><span>✨</span> Auto-Generate Narasi Pretexting</button>
+                <textarea id="ex-narasi" rows="8" placeholder="Ketik manual atau gunakan AI..."></textarea>
             </div>
-
             <div class="form-group"><label>Probabilitas Sukses</label><select id="ex-probabilitas"><option value="90%">Sangat Tinggi (~90%)</option><option value="60%">Moderat (~60%)</option><option value="30%">Rendah (~30%)</option></select></div>
             <button class="btn-execute" id="btn-ex" onclick="submitExecution()">Kunci Skenario Eksekusi (PROFILED)</button>
             <div id="log-execution" class="status-log">Menyusun hipotesis eksekusi akhir.</div>
@@ -173,6 +171,22 @@
         <div id="tab-visual" class="tab-content"><div id="networkGraph"></div><button class="btn-execute" style="margin-top: 15px; background-color: #252525; color: #d4af37;" onclick="renderVisualMap()">🔄 Muat Ulang Peta</button></div>
         <div id="tab-timeline" class="tab-content"><div id="timelineBoard"></div><button class="btn-execute" style="margin-top: 15px; background-color: #252525; color: #d4af37;" onclick="renderTimeline()">⏳ Segarkan Narasi</button></div>
         <div id="tab-dossier" class="tab-content"><button class="btn-execute" style="background-color: #252525; color: #d4af37; margin-bottom: 20px;" onclick="generateDossier()">📄 Kumpulkan Data Dossier</button><div id="dossierPaper"></div><button id="btn-print" class="btn-execute" style="margin-top: 20px; display: none;" onclick="window.print()">🖨️ Cetak PDF</button></div>
+
+        <div id="tab-linguistic" class="tab-content">
+            <p style="font-size: 0.9em; color: #aaa; margin-bottom: 15px; border-left: 2px solid #ff5555; padding-left: 10px;">
+                <strong>PROSEDUR AUDIT ETIKA:</strong> Tempelkan (paste) salinan percakapan mentah dari WhatsApp, Instagram, atau Forum antara Target (Dosen) dan Entitas B (Mahasiswa). Sistem AI akan memindai pergeseran batas profesional dan indikasi <em>grooming</em>.
+            </p>
+            <div class="form-group">
+                <textarea id="ling-sample" rows="10" placeholder="Contoh:&#10;[14:20] Target: Bimbingan hari ini kita pindah ke kafe senja saja ya, jangan di kampus biar lebih santai...&#10;[14:21] Mahasiswa: Baik Pak, jam berapa ya?&#10;[14:23] Target: Jam 7 malam saja. Pakaiannya yang cantik ya."></textarea>
+            </div>
+            <button class="btn-execute btn-ai-red" id="btn-ling-gen" onclick="generateLinguisticAnalysis()">
+                <span>🚨</span> Pindai Red Flags Percakapan
+            </button>
+            <div id="log-linguistic" class="status-log">Menunggu sampel teks untuk diaudit.</div>
+            
+            <div id="ling-result"></div>
+        </div>
+
     </div>
 </div>
 
@@ -257,11 +271,15 @@
         const isNone = (targetId === "NONE");
         picker.style.color = isNone ? "#ff5555" : "#55ff55";
         document.getElementById("btn-wipe").style.display = isNone ? "none" : "block"; 
-        const menus = ["menu-footprint", "menu-behavior", "menu-execution", "menu-visual", "menu-timeline", "menu-dossier"];
+        
+        // Menambahkan menu-linguistic ke array yang di-toggle disable-nya
+        const menus = ["menu-footprint", "menu-behavior", "menu-execution", "menu-visual", "menu-timeline", "menu-dossier", "menu-linguistic"];
         menus.forEach(menu => document.getElementById(menu).disabled = isNone);
+        
         if (isNone) { document.getElementById("hfsmPanel").style.display = "none"; } 
         else { refreshHFSMStatus(); }
         document.getElementById("dossierPaper").style.display = "none"; document.getElementById("btn-print").style.display = "none";
+        
         if(!isNone && document.getElementById("tab-visual").classList.contains("active")) renderVisualMap();
         if(!isNone && document.getElementById("tab-timeline").classList.contains("active")) renderTimeline();
     }
@@ -277,9 +295,7 @@
                 document.getElementById("mainStateText").innerText = result.main_state;
                 const barFill = document.getElementById("hfsmProgress");
                 barFill.style.width = `${result.progress}%`;
-                if(result.progress < 50) barFill.style.backgroundColor = "#ff5555"; 
-                else if(result.progress < 100) barFill.style.backgroundColor = "#d4af37"; 
-                else barFill.style.backgroundColor = "#55ff55"; 
+                if(result.progress < 50) barFill.style.backgroundColor = "#ff5555"; else if(result.progress < 100) barFill.style.backgroundColor = "#d4af37"; else barFill.style.backgroundColor = "#55ff55"; 
 
                 const m = result.hfsm_matrix;
                 const toggleBadge = (id, isActive, actClass) => { const el = document.getElementById(id); if(isActive) { el.classList.add("active", actClass); } else { el.classList.remove("active", "active-recon", "active-bhv", "active-exc"); } };
@@ -312,37 +328,51 @@
         if(res) { document.getElementById("ex-narasi").value=''; refreshHFSMStatus(); }
     }
 
-    // --- FUNGSI BARU: GENERATOR AI UNTUK PRETEXTING ---
     async function generateAIPrompt() {
         if (CURRENT_TARGET_ID === "NONE") return alert("Pilih target terlebih dahulu!");
-        
-        const btnAI = document.getElementById("btn-ai-gen");
-        const logExec = document.getElementById("log-execution");
-        const narasiArea = document.getElementById("ex-narasi");
-        
-        btnAI.disabled = true;
-        btnAI.innerHTML = "🧠 AI Sedang Menyusun Strategi Pretexting...";
-        logExec.style.color = "#d4af37";
-        logExec.innerText = "Mengirim profil target ke model kognitif Gemini...";
-
+        const btnAI = document.getElementById("btn-ai-gen"); const logExec = document.getElementById("log-execution"); const narasiArea = document.getElementById("ex-narasi");
+        btnAI.disabled = true; btnAI.innerHTML = "🧠 AI Sedang Menyusun Strategi Pretexting..."; logExec.style.color = "#d4af37"; logExec.innerText = "Mengirim profil ke Gemini...";
         try {
             const res = await sendToEngine({ action: "GENERATE_AI_PRETEXT", target_id: CURRENT_TARGET_ID }, "log-execution", null);
-            if (res && res.generated_text) {
-                // Hapus tanda kutip atau markdown berlebih dari AI jika ada, lalu masukkan ke textarea
-                narasiArea.value = res.generated_text.trim();
-                logExec.style.color = "#55ff55";
-                logExec.innerText = "[SUCCESS] Narasi AI berhasil di-generate. Silakan tinjau dan edit sebelum dikunci.";
+            if (res && res.generated_text) { narasiArea.value = res.generated_text.trim(); logExec.style.color = "#55ff55"; logExec.innerText = "[SUCCESS] Narasi AI berhasil di-generate."; }
+        } catch(e) { logExec.style.color = "#ff5555"; logExec.innerText = "[ERROR] AI gagal membuat narasi."; } 
+        finally { btnAI.disabled = false; btnAI.innerHTML = "<span>✨</span> Auto-Generate Narasi Pretexting"; }
+    }
+
+    // --- FUNGSI BARU: FORENSIK BAHASA (TAB 8) ---
+    async function generateLinguisticAnalysis() {
+        const sampleText = document.getElementById("ling-sample").value;
+        if (!sampleText) return alert("Tempelkan teks percakapan terlebih dahulu!");
+
+        const btnLing = document.getElementById("btn-ling-gen");
+        const logLing = document.getElementById("log-linguistic");
+        const resultArea = document.getElementById("ling-result");
+
+        btnLing.disabled = true;
+        btnLing.innerHTML = "🧠 Memindai Indikator Grooming & Manipulasi...";
+        logLing.style.color = "#d4af37";
+        logLing.innerText = "Melakukan audit bahasa ke mesin kognitif Gemini...";
+        resultArea.style.display = "none";
+        resultArea.innerHTML = "";
+
+        try {
+            const res = await sendToEngine({ action: "ANALYZE_LINGUISTIC", text_sample: sampleText }, "log-linguistic", null);
+            if (res && res.analysis_result) {
+                // Menampilkan hasil yang di-generate Gemini
+                resultArea.innerHTML = res.analysis_result.replace(/\n/g, "<br>"); // Mengubah line break JSON ke HTML
+                resultArea.style.display = "block";
+                logLing.style.color = "#55ff55";
+                logLing.innerText = "[WARNING DETECTED] Audit forensik bahasa selesai diurai.";
             }
         } catch(e) {
-            logExec.style.color = "#ff5555";
-            logExec.innerText = "[ERROR] AI gagal membuat narasi. Cek apakah API Key sudah dipasang di Backend.";
+            logLing.style.color = "#ff5555";
+            logLing.innerText = "[ERROR] Gagal menganalisis teks.";
         } finally {
-            btnAI.disabled = false;
-            btnAI.innerHTML = "<span>✨</span> Auto-Generate Narasi dengan AI Cognitive";
+            btnLing.disabled = false;
+            btnLing.innerHTML = "<span>🚨</span> Pindai Red Flags Percakapan";
         }
     }
 
-    // --- RENDER VISUAL & LAPORAN ---
     async function renderVisualMap() {
         const container = document.getElementById("networkGraph"); container.innerHTML = "<p style='padding:20px; color:#aaa;'>Menarik struktur relasi...</p>";
         if (CURRENT_TARGET_ID === "NONE") return;
