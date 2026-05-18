@@ -36,6 +36,10 @@
         .timeline-container { position: relative; max-width: 100%; margin: 20px 0; padding-left: 20px; border-left: 2px solid #444; }
         .timeline-item { position: relative; margin-bottom: 25px; padding-left: 20px; }
         .timeline-item::before { content: ''; position: absolute; left: -27px; top: 3px; width: 12px; height: 12px; border-radius: 50%; background-color: #d4af37; border: 2px solid #1a1a1a; box-shadow: 0 0 8px rgba(212, 175, 55, 0.5); }
+        .timeline-item.inisiasi::before { background-color: #ff5555; box-shadow: 0 0 8px rgba(255, 85, 85, 0.5); }
+        .timeline-item.jejak::before { background-color: #d4af37; }
+        .timeline-item.perilaku::before { background-color: #5555ff; box-shadow: 0 0 8px rgba(85, 85, 255, 0.5); }
+        .timeline-item.eksekusi::before { background-color: #55ff55; box-shadow: 0 0 8px rgba(85, 255, 85, 0.5); }
         .timeline-date { font-size: 0.75em; color: #d4af37; margin-bottom: 4px; display: block; }
         .timeline-title { font-weight: bold; color: #fff; margin-bottom: 5px; font-size: 1.05em; }
         .timeline-desc { font-size: 0.9em; color: #aaa; line-height: 1.5; background: #222; padding: 10px; border-radius: 4px; border-left: 3px solid #444; }
@@ -59,7 +63,7 @@
 
 <div class="dashboard">
     <div class="header">
-        <h1>[ EarlytaOSint v1.4 ]</h1>
+        <h1>[ EarlytaOSint v1.4.1 ]</h1>
         <div class="selector-zone">
             <label style="display:inline; margin:0;">Target Aktif:</label>
             <select id="targetPicker" class="target-picker" onchange="switchActiveTarget(this.value)">
@@ -138,7 +142,7 @@
     const GAS_URL = "https://script.google.com/macros/s/AKfycbykgN0YNiaV91FgrG-sIJlyQi0k4cncNF7OgT2YURr1t5F6cyILps4TY8fyw-YT69N-4A/exec";
     let CURRENT_TARGET_ID = "NONE";
     let networkInstance = null;
-    let cachedTimelineData = []; // Untuk kebutuhan Dossier
+    let cachedTimelineData = []; 
 
     window.onload = function() { loadTargetDropdown(); };
 
@@ -178,7 +182,7 @@
         const isNone = (targetId === "NONE");
         
         picker.style.color = isNone ? "#ff5555" : "#55ff55";
-        document.getElementById("btn-wipe").style.display = isNone ? "none" : "block"; // Toggle tombol WIPE
+        document.getElementById("btn-wipe").style.display = isNone ? "none" : "block"; 
         
         const menus = ["menu-footprint", "menu-behavior", "menu-execution", "menu-visual", "menu-timeline", "menu-dossier"];
         menus.forEach(menu => document.getElementById(menu).disabled = isNone);
@@ -207,7 +211,6 @@
         } finally { if(btn) btn.disabled = false; }
     }
 
-    // -- FUNGSI INPUT BAWAAN (TAB 1-4) --
     async function submitInisiasi() {
         const nama = document.getElementById("init-nama").value; const identifier = document.getElementById("init-identifier").value; const notes = document.getElementById("init-notes").value;
         if (!nama || !identifier) return alert("Nama dan Identifier wajib diisi!");
@@ -251,7 +254,7 @@
             const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "GET_TIMELINE_DATA", target_id: CURRENT_TARGET_ID }) });
             const result = await res.json();
             if (result.status === "success" && result.timeline.length > 0) {
-                cachedTimelineData = result.timeline; // Simpan untuk dipakai oleh Dossier
+                cachedTimelineData = result.timeline; 
                 let html = '<div class="timeline-container">';
                 result.timeline.forEach(item => {
                     html += `<div class="timeline-item ${item.type}"><span class="timeline-date">[ ${item.date} ]</span><div class="timeline-title">${item.title}</div><div class="timeline-desc">${item.desc}</div></div>`;
@@ -261,16 +264,14 @@
         } catch (e) { board.innerHTML = "<p style='color:#ff5555;'>Gagal menarik narasi.</p>"; }
     }
 
-    // FUNGSI BARU: GENERATOR DOSSIER
     async function generateDossier() {
         if (CURRENT_TARGET_ID === "NONE") return;
         const paper = document.getElementById("dossierPaper");
         
-        // Memastikan timeline data terbaru telah di-fetch
         await renderTimeline(); 
 
         const picker = document.getElementById("targetPicker");
-        const targetName = picker.options[picker.selectedIndex].text.split(" (")[0]; // Ambil nama saja
+        const targetName = picker.options[picker.selectedIndex].text.split(" (")[0]; 
 
         let html = `
             <div id="dossierHeaderArea">
@@ -298,11 +299,10 @@
         document.getElementById("btn-print").style.display = "block";
     }
 
-    // FUNGSI BARU: PROTOKOL PENGHAPUSAN (WIPE DATA)
+    // FUNGSI BARU: PROTOKOL PENGHAPUSAN (WIPE DATA) - REVISI UI LOCK
     async function wipeTargetData() {
         if (CURRENT_TARGET_ID === "NONE") return;
         
-        // Konfirmasi ganda untuk keamanan
         const confirm1 = confirm(`PERINGATAN KRITIS: Anda akan menghapus SELURUH data jejak, perilaku, dan teori eksekusi untuk target [${CURRENT_TARGET_ID}]. Data tidak dapat dikembalikan.\n\nLanjutkan?`);
         if (!confirm1) return;
 
@@ -315,10 +315,14 @@
             const res = await sendToEngine({ action: "DELETE_TARGET", target_id: CURRENT_TARGET_ID }, null, null);
             if (res) {
                 alert("Protokol Wipe Selesai:\n" + res.message);
-                // Reset ke state awal
-                CURRENT_TARGET_ID = "NONE";
-                await loadTargetDropdown();
-                switchTab({currentTarget: document.getElementsByClassName("tab-link")[0]}, 'tab-inisiasi');
+                
+                // --- KUNCI UTAMA: Update Dropdown & Kunci UI ---
+                await loadTargetDropdown(); 
+                switchActiveTarget("NONE"); 
+                
+                // Kembalikan fokus tampilan ke Tab 1 (Inisiasi)
+                const tabInisiasiBtn = document.getElementsByClassName("tab-link")[0];
+                switchTab({ currentTarget: tabInisiasiBtn }, 'tab-inisiasi');
             }
         } finally {
             btnWipe.innerText = originalText;
