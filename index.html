@@ -3,15 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EarlytaOSint | Executive Dashboard</title>
+    <title>EarlytaOSint | Executive Matrix</title>
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style>
+        /* GAYA LAYAR (DARK/SENJA) */
         body { background-color: #0f0f0f; color: #e0e0e0; font-family: 'Courier New', Courier, monospace; margin: 0; padding: 20px; display: flex; justify-content: center; }
         .dashboard { background-color: #1a1a1a; width: 100%; max-width: 900px; border-radius: 8px; box-shadow: 0 4px 25px rgba(0,0,0,0.7); border-top: 4px solid #d4af37; overflow: hidden; }
         .header { padding: 20px; background-color: #111; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .header h1 { margin: 0; color: #d4af37; font-size: 1.4em; }
         .selector-zone { display: flex; align-items: center; gap: 10px; }
         select.target-picker { background-color: #252525; color: #ff5555; border: 1px solid #444; padding: 8px; font-family: inherit; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-wipe { background-color: #8b0000; color: #fff; border: 1px solid #ff5555; padding: 8px 12px; cursor: pointer; font-family: inherit; font-weight: bold; border-radius: 4px; display: none; transition: background 0.3s; }
+        .btn-wipe:hover { background-color: #ff5555; color: #000; }
         
         .nav-tabs { display: flex; background-color: #151515; border-bottom: 1px solid #333; overflow-x: auto; }
         .tab-link { flex: 1; padding: 12px; text-align: center; background: none; border: none; color: #888; font-family: inherit; cursor: pointer; transition: all 0.3s; border-bottom: 2px solid transparent; white-space: nowrap; }
@@ -24,37 +27,45 @@
         label { display: block; margin-bottom: 6px; font-size: 0.9em; color: #aaa; }
         input[type="text"], textarea, select { width: 100%; padding: 10px; background-color: #252525; border: 1px solid #444; color: #fff; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
         input:focus, textarea:focus, select:focus { border-color: #d4af37; outline: none; }
-        
         button.btn-execute { width: 100%; padding: 12px; background-color: #d4af37; color: #121212; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: inherit; transition: background 0.3s; }
         button.btn-execute:hover { background-color: #b5952f; }
         button:disabled { background-color: #444 !important; color: #888; cursor: not-allowed; }
         .status-log { margin-top: 15px; padding: 10px; background-color: #111; border-radius: 4px; font-size: 0.8em; color: #888; text-align: center; }
         
         #networkGraph { width: 100%; height: 450px; background-color: #111; border: 1px solid #333; border-radius: 4px; margin-top: 10px; }
-
-        /* GAYA CSS UNTUK GARIS WAKTU NARATIF */
         .timeline-container { position: relative; max-width: 100%; margin: 20px 0; padding-left: 20px; border-left: 2px solid #444; }
         .timeline-item { position: relative; margin-bottom: 25px; padding-left: 20px; }
         .timeline-item::before { content: ''; position: absolute; left: -27px; top: 3px; width: 12px; height: 12px; border-radius: 50%; background-color: #d4af37; border: 2px solid #1a1a1a; box-shadow: 0 0 8px rgba(212, 175, 55, 0.5); }
-        .timeline-item.inisiasi::before { background-color: #ff5555; box-shadow: 0 0 8px rgba(255, 85, 85, 0.5); }
-        .timeline-item.jejak::before { background-color: #d4af37; }
-        .timeline-item.perilaku::before { background-color: #5555ff; box-shadow: 0 0 8px rgba(85, 85, 255, 0.5); }
-        .timeline-item.eksekusi::before { background-color: #55ff55; box-shadow: 0 0 8px rgba(85, 255, 85, 0.5); }
         .timeline-date { font-size: 0.75em; color: #d4af37; margin-bottom: 4px; display: block; }
         .timeline-title { font-weight: bold; color: #fff; margin-bottom: 5px; font-size: 1.05em; }
         .timeline-desc { font-size: 0.9em; color: #aaa; line-height: 1.5; background: #222; padding: 10px; border-radius: 4px; border-left: 3px solid #444; }
+
+        /* GAYA DOSSIER (PRINT VIEW) */
+        #dossierPaper { display: none; background-color: #e0e0e0; color: #121212; padding: 40px; border-radius: 4px; margin-top: 20px; font-family: 'Arial', sans-serif; }
+        
+        @media print {
+            body { background-color: #fff; color: #000; display: block; padding: 0; margin: 0; font-family: 'Arial', sans-serif; }
+            .dashboard { box-shadow: none; border: none; max-width: 100%; border-radius: 0; background-color: #fff; }
+            .header, .nav-tabs, .btn-execute, .form-group, #networkGraph, .status-log, .selector-zone { display: none !important; }
+            .tab-content { display: none; padding: 0; }
+            #tab-dossier { display: block !important; }
+            #dossierPaper { display: block !important; background-color: #fff !important; color: #000 !important; padding: 0 !important; margin: 0 !important; border: none !important; }
+            #dossierHeaderArea { border-bottom: 2px solid #000; margin-bottom: 20px; padding-bottom: 10px; }
+            .dossier-section { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ccc; }
+        }
     </style>
 </head>
 <body>
 
 <div class="dashboard">
     <div class="header">
-        <h1>[ EarlytaOSint v1.3 ]</h1>
+        <h1>[ EarlytaOSint v1.4 ]</h1>
         <div class="selector-zone">
             <label style="display:inline; margin:0;">Target Aktif:</label>
             <select id="targetPicker" class="target-picker" onchange="switchActiveTarget(this.value)">
                 <option value="NONE">-- PILIH TARGET --</option>
             </select>
+            <button id="btn-wipe" class="btn-wipe" onclick="wipeTargetData()" title="Hanguskan Seluruh Data Target">☠️ WIPE</button>
         </div>
     </div>
 
@@ -64,7 +75,8 @@
         <button class="tab-link" id="menu-behavior" onclick="switchTab(event, 'tab-behavior')" disabled>3. Behavioral</button>
         <button class="tab-link" id="menu-execution" onclick="switchTab(event, 'tab-execution')" disabled>4. Execution</button>
         <button class="tab-link" id="menu-visual" onclick="switchTab(event, 'tab-visual')" disabled>5. Map 📊</button>
-        <button class="tab-link" id="menu-timeline" onclick="switchTab(event, 'tab-timeline')" disabled>6. Garis Waktu ⏳</button>
+        <button class="tab-link" id="menu-timeline" onclick="switchTab(event, 'tab-timeline')" disabled>6. Timeline ⏳</button>
+        <button class="tab-link" id="menu-dossier" onclick="switchTab(event, 'tab-dossier')" disabled>7. Dossier 📄</button>
     </div>
 
     <div id="tab-inisiasi" class="tab-content active">
@@ -107,11 +119,18 @@
     </div>
 
     <div id="tab-timeline" class="tab-content">
-        <p style="font-size: 0.9em; color: #888; margin-bottom: 20px; font-style: italic;">"Jejak mungkin bisa dihapus, tetapi narasi akan selalu menyisakan benang merah..."</p>
-        <div id="timelineBoard">
-            <p style='color:#aaa;'>Silakan muat data kronologis.</p>
-        </div>
+        <div id="timelineBoard"><p style='color:#aaa;'>Silakan muat data kronologis.</p></div>
         <button class="btn-execute" style="margin-top: 15px; background-color: #252525; color: #d4af37; border: 1px solid #333;" onclick="renderTimeline()">⏳ Segarkan Narasi Garis Waktu</button>
+    </div>
+
+    <div id="tab-dossier" class="tab-content">
+        <p style="font-size: 0.9em; color: #aaa; margin-bottom: 15px;">Kompilasi laporan eksekutif siap cetak/ekspor PDF.</p>
+        <button class="btn-execute" style="background-color: #252525; color: #d4af37; border: 1px solid #333; margin-bottom: 20px;" onclick="generateDossier()">📄 Kumpulkan Data & Buat Laporan</button>
+        
+        <div id="dossierPaper">
+            </div>
+        
+        <button id="btn-print" class="btn-execute" style="margin-top: 20px; display: none;" onclick="window.print()">🖨️ Cetak / Simpan sebagai PDF</button>
     </div>
 </div>
 
@@ -119,6 +138,7 @@
     const GAS_URL = "https://script.google.com/macros/s/AKfycbykgN0YNiaV91FgrG-sIJlyQi0k4cncNF7OgT2YURr1t5F6cyILps4TY8fyw-YT69N-4A/exec";
     let CURRENT_TARGET_ID = "NONE";
     let networkInstance = null;
+    let cachedTimelineData = []; // Untuk kebutuhan Dossier
 
     window.onload = function() { loadTargetDropdown(); };
 
@@ -130,8 +150,8 @@
         document.getElementById(tabId).className += " active";
         evt.currentTarget.className += " active";
         
-        if(tabId === 'tab-visual') { renderVisualMap(); }
-        if(tabId === 'tab-timeline') { renderTimeline(); }
+        if(tabId === 'tab-visual') renderVisualMap();
+        if(tabId === 'tab-timeline') renderTimeline();
     }
 
     async function loadTargetDropdown() {
@@ -158,12 +178,14 @@
         const isNone = (targetId === "NONE");
         
         picker.style.color = isNone ? "#ff5555" : "#55ff55";
-        document.getElementById("menu-footprint").disabled = isNone;
-        document.getElementById("menu-behavior").disabled = isNone;
-        document.getElementById("menu-execution").disabled = isNone;
-        document.getElementById("menu-visual").disabled = isNone;
-        document.getElementById("menu-timeline").disabled = isNone;
+        document.getElementById("btn-wipe").style.display = isNone ? "none" : "block"; // Toggle tombol WIPE
         
+        const menus = ["menu-footprint", "menu-behavior", "menu-execution", "menu-visual", "menu-timeline", "menu-dossier"];
+        menus.forEach(menu => document.getElementById(menu).disabled = isNone);
+        
+        document.getElementById("dossierPaper").style.display = "none";
+        document.getElementById("btn-print").style.display = "none";
+
         if(!isNone && document.getElementById("tab-visual").classList.contains("active")) renderVisualMap();
         if(!isNone && document.getElementById("tab-timeline").classList.contains("active")) renderTimeline();
     }
@@ -171,38 +193,37 @@
     async function sendToEngine(payload, logId, btn) {
         const logEl = document.getElementById(logId);
         if(btn) btn.disabled = true;
-        logEl.innerText = "Mengirim data...";
+        if(logEl) logEl.innerText = "Memproses transmisi data...";
         try {
             const response = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
             const result = await response.json();
             if (result.status === "success") {
-                logEl.style.color = "#55ff55"; logEl.innerText = `[BERHASIL] ${result.message}`; return result;
+                if(logEl) { logEl.style.color = "#55ff55"; logEl.innerText = `[BERHASIL] ${result.message}`; }
+                return result;
             } throw new Error(result.message);
         } catch (error) {
-            logEl.style.color = "#ff5555"; logEl.innerText = `[ERROR] Jaringan terputus.`; return null;
+            if(logEl) { logEl.style.color = "#ff5555"; logEl.innerText = `[ERROR] Transmisi gagal.`; }
+            return null;
         } finally { if(btn) btn.disabled = false; }
     }
 
-    // --- Fungsi Input (Tab 1-4) sama seperti sebelumnya ---
+    // -- FUNGSI INPUT BAWAAN (TAB 1-4) --
     async function submitInisiasi() {
         const nama = document.getElementById("init-nama").value; const identifier = document.getElementById("init-identifier").value; const notes = document.getElementById("init-notes").value;
         if (!nama || !identifier) return alert("Nama dan Identifier wajib diisi!");
         const res = await sendToEngine({ action: "ADD_TARGET", data: { nama, identifier, notes } }, "log-inisiasi", document.getElementById("btn-init"));
         if (res) { document.getElementById("init-nama").value=''; document.getElementById("init-identifier").value=''; document.getElementById("init-notes").value=''; await loadTargetDropdown(); switchActiveTarget(res.target_id); }
     }
-
     async function submitFootprint() {
         const data = { target_id: CURRENT_TARGET_ID, Platform: document.getElementById("fp-platform").value, URL_Temuan: document.getElementById("fp-url").value, Kategori_Jejak: document.getElementById("fp-kategori").value, Validitas: document.getElementById("fp-validitas").value };
         const res = await sendToEngine({ action: "ADD_FOOTPRINT", data: data }, "log-footprint", document.getElementById("btn-fp"));
         if(res) { document.getElementById("fp-platform").value=''; document.getElementById("fp-url").value=''; }
     }
-
     async function submitBehavior() {
         const data = { target_id: CURRENT_TARGET_ID, Pola_Waktu: document.getElementById("bh-waktu").value, Gaya_Komunikasi: document.getElementById("bh-gaya").value, Titik_Rentan_Psikologis: document.getElementById("bh-rentan").value, Minat_Spesifik: document.getElementById("bh-minat").value };
         const res = await sendToEngine({ action: "ADD_BEHAVIOR", data: data }, "log-behavior", document.getElementById("btn-bh"));
         if(res) { document.getElementById("bh-waktu").value=''; document.getElementById("bh-gaya").value=''; document.getElementById("bh-rentan").value=''; document.getElementById("bh-minat").value=''; }
     }
-
     async function submitExecution() {
         const data = { target_id: CURRENT_TARGET_ID, Vektor_Pendekatan: document.getElementById("ex-vektor").value, Skenario_Narasi: document.getElementById("ex-narasi").value, Probabilitas_Sukses: document.getElementById("ex-probabilitas").value };
         const res = await sendToEngine({ action: "ADD_EXECUTION", data: data }, "log-execution", document.getElementById("btn-ex"));
@@ -214,47 +235,94 @@
         container.innerHTML = "<p style='padding:20px; color:#aaa;'>Menarik struktur relasi...</p>";
         if (CURRENT_TARGET_ID === "NONE") return;
         try {
-            const response = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "GET_GRAPH_DATA", target_id: CURRENT_TARGET_ID }) });
-            const result = await response.json();
+            const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "GET_GRAPH_DATA", target_id: CURRENT_TARGET_ID }) });
+            const result = await res.json();
             if (result.status === "success") {
-                const data = { nodes: new vis.DataSet(result.nodes), edges: new vis.DataSet(result.edges) };
-                const options = { nodes: { font: { color: '#ffffff' }, borderWidth: 2 }, edges: { color: { color: '#555' }, arrows: 'to' } };
-                networkInstance = new vis.Network(container, data, options);
+                networkInstance = new vis.Network(container, { nodes: new vis.DataSet(result.nodes), edges: new vis.DataSet(result.edges) }, { nodes: { font: { color: '#ffffff' }, borderWidth: 2 }, edges: { color: { color: '#555' }, arrows: 'to' } });
             }
         } catch (e) { container.innerHTML = "<p style='color:#ff5555;'>Gagal merender grafik.</p>"; }
     }
 
-    // FUNGSI BARU: RENDER GARIS WAKTU NARATIF
     async function renderTimeline() {
         const board = document.getElementById("timelineBoard");
-        board.innerHTML = "<p style='color:#d4af37;'>Menyusun ulang kronologi investigasi...</p>";
+        board.innerHTML = "<p style='color:#d4af37;'>Menyusun ulang kronologi...</p>";
         if (CURRENT_TARGET_ID === "NONE") return;
-
         try {
-            const response = await fetch(GAS_URL, {
-                method: "POST",
-                body: JSON.stringify({ action: "GET_TIMELINE_DATA", target_id: CURRENT_TARGET_ID })
-            });
-            const result = await response.json();
-
+            const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "GET_TIMELINE_DATA", target_id: CURRENT_TARGET_ID }) });
+            const result = await res.json();
             if (result.status === "success" && result.timeline.length > 0) {
+                cachedTimelineData = result.timeline; // Simpan untuk dipakai oleh Dossier
                 let html = '<div class="timeline-container">';
                 result.timeline.forEach(item => {
-                    html += `
-                        <div class="timeline-item ${item.type}">
-                            <span class="timeline-date">[ ${item.date} ]</span>
-                            <div class="timeline-title">${item.title}</div>
-                            <div class="timeline-desc">${item.desc}</div>
-                        </div>
-                    `;
+                    html += `<div class="timeline-item ${item.type}"><span class="timeline-date">[ ${item.date} ]</span><div class="timeline-title">${item.title}</div><div class="timeline-desc">${item.desc}</div></div>`;
                 });
-                html += '</div>';
-                board.innerHTML = html;
-            } else {
-                board.innerHTML = "<p style='color:#aaa;'>Belum ada narasi yang bisa diceritakan dari target ini.</p>";
+                board.innerHTML = html + '</div>';
+            } else { board.innerHTML = "<p style='color:#aaa;'>Belum ada data kronologis.</p>"; }
+        } catch (e) { board.innerHTML = "<p style='color:#ff5555;'>Gagal menarik narasi.</p>"; }
+    }
+
+    // FUNGSI BARU: GENERATOR DOSSIER
+    async function generateDossier() {
+        if (CURRENT_TARGET_ID === "NONE") return;
+        const paper = document.getElementById("dossierPaper");
+        
+        // Memastikan timeline data terbaru telah di-fetch
+        await renderTimeline(); 
+
+        const picker = document.getElementById("targetPicker");
+        const targetName = picker.options[picker.selectedIndex].text.split(" (")[0]; // Ambil nama saja
+
+        let html = `
+            <div id="dossierHeaderArea">
+                <h1 style="margin: 0; font-size: 24px; text-transform: uppercase;">EXECUTIVE DOSSIER REPORT</h1>
+                <p style="margin: 5px 0 0 0; color: #555;">Dokumen Rahasia - EarlytaOSint System</p>
+                <p style="margin: 5px 0 0 0;"><strong>ID Subjek:</strong> ${CURRENT_TARGET_ID} | <strong>Nama:</strong> ${targetName}</p>
+                <p style="margin: 5px 0 0 0;"><strong>Tanggal Diekstrak:</strong> ${new Date().toLocaleDateString('id-ID')}</p>
+            </div>
+        `;
+
+        cachedTimelineData.forEach(item => {
+            html += `
+                <div class="dossier-section">
+                    <h3 style="margin: 0 0 5px 0; color: #333;">${item.title}</h3>
+                    <p style="margin: 0 0 5px 0; font-size: 0.85em; color: #777;">Konteks/Fase: ${item.date}</p>
+                    <p style="margin: 0; line-height: 1.6;">${item.desc}</p>
+                </div>
+            `;
+        });
+
+        html += `<div style="text-align: center; margin-top: 30px; font-size: 0.8em; color: #888;">--- AKHIR DARI LAPORAN ---</div>`;
+
+        paper.innerHTML = html;
+        paper.style.display = "block";
+        document.getElementById("btn-print").style.display = "block";
+    }
+
+    // FUNGSI BARU: PROTOKOL PENGHAPUSAN (WIPE DATA)
+    async function wipeTargetData() {
+        if (CURRENT_TARGET_ID === "NONE") return;
+        
+        // Konfirmasi ganda untuk keamanan
+        const confirm1 = confirm(`PERINGATAN KRITIS: Anda akan menghapus SELURUH data jejak, perilaku, dan teori eksekusi untuk target [${CURRENT_TARGET_ID}]. Data tidak dapat dikembalikan.\n\nLanjutkan?`);
+        if (!confirm1) return;
+
+        const btnWipe = document.getElementById("btn-wipe");
+        const originalText = btnWipe.innerText;
+        btnWipe.innerText = "MENGHANGUSKAN...";
+        btnWipe.disabled = true;
+
+        try {
+            const res = await sendToEngine({ action: "DELETE_TARGET", target_id: CURRENT_TARGET_ID }, null, null);
+            if (res) {
+                alert("Protokol Wipe Selesai:\n" + res.message);
+                // Reset ke state awal
+                CURRENT_TARGET_ID = "NONE";
+                await loadTargetDropdown();
+                switchTab({currentTarget: document.getElementsByClassName("tab-link")[0]}, 'tab-inisiasi');
             }
-        } catch (e) {
-            board.innerHTML = "<p style='color:#ff5555;'>Gagal menarik benang merah narasi.</p>";
+        } finally {
+            btnWipe.innerText = originalText;
+            btnWipe.disabled = false;
         }
     }
 </script>
