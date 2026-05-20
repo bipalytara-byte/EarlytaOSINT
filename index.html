@@ -378,9 +378,10 @@
 
 <script>
     // =========================================================================
-    // PASTIKAN URL INI ADALAH URL WEB APP GAS-MU YANG BENAR!
+    // ⚠️ PERINGATAN: MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI BAWAH INI!
+    // Ganti teks di dalam tanda kutip dengan URL Deployment yang berakhiran /exec
     // =========================================================================
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbykgN0YNiaV91FgrG-sIJlyQi0k4cncNF7OgT2YURr1t5F6cyILps4TY8fyw-YT69N-4A/exec";
+    const GAS_URL = "GANTI_DENGAN_URL_WEB_APP_ANDA";
     
     let SESSION_TOKEN = null; 
     let CURRENT_TARGET_ID = "NONE";
@@ -403,7 +404,7 @@
                 document.getElementById("mainApp").style.display = "block"; 
                 await loadTargetDropdown();
             } else { throw new Error(result.message); }
-        } catch (error) { msgEl.innerText = error.message; document.getElementById("authKey").value = ""; } 
+        } catch (error) { msgEl.innerText = "Gagal memproses otentikasi. Pastikan GAS_URL sudah benar."; document.getElementById("authKey").value = ""; } 
         finally { btn.disabled = false; btn.innerText = "AUTHORIZE"; }
     }
 
@@ -432,4 +433,140 @@
             const result = await response.json();
             if (result.status === "success") {
                 picker.innerHTML = '<option value="NONE">-- PILIH TARGET --</option>';
-                result.targets.forEach
+                result.targets.forEach(t => {
+                    const option = document.createElement("option"); option.value = t.id; option.text = `${t.nama} (${t.id})`; picker.appendChild(option);
+                });
+                picker.value = CURRENT_TARGET_ID;
+            }
+        } catch (e) { }
+    }
+
+    function switchTab(evt, tabId) {
+        const tabcontents = document.getElementsByClassName("tab-content");
+        for (let i = 0; i < tabcontents.length; i++) tabcontents[i].className = tabcontents[i].className.replace(" active", "");
+        const tablinks = document.getElementsByClassName("tab-link");
+        for (let i = 0; i < tablinks.length; i++) tablinks[i].className = tablinks[i].className.replace(" active", "");
+        document.getElementById(tabId).className += " active";
+        evt.currentTarget.className += " active";
+        if(tabId === 'tab-visual') renderVisualMap();
+        if(tabId === 'tab-timeline') renderTimeline();
+    }
+
+    function switchActiveTarget(targetId) {
+        CURRENT_TARGET_ID = targetId;
+        const picker = document.getElementById("targetPicker");
+        const isNone = (targetId === "NONE");
+        picker.style.color = isNone ? "var(--red)" : "var(--green)";
+        document.getElementById("btn-wipe").style.display = isNone ? "none" : "block"; 
+        
+        const summaryBtn = document.getElementById("btn-quick-summary");
+        if (summaryBtn) {
+            summaryBtn.disabled = isNone;
+            summaryBtn.innerText = isNone ? "📊 RINGKASAN" : `📊 RINGKASAN (${targetId})`;
+        }
+        
+        const menus = ["menu-footprint", "menu-behavior", "menu-execution", "menu-visual", "menu-timeline", "menu-dossier", "menu-linguistic"];
+        menus.forEach(menu => document.getElementById(menu).disabled = isNone);
+        
+        if (isNone) { document.getElementById("hfsmPanel").style.display = "none"; } 
+        else { refreshHFSMStatus(); }
+        document.getElementById("dossierPaper").style.display = "none"; document.getElementById("btn-print").style.display = "none";
+        
+        if(!isNone && document.getElementById("tab-visual").classList.contains("active")) renderVisualMap();
+        if(!isNone && document.getElementById("tab-timeline").classList.contains("active")) renderTimeline();
+    }
+
+    async function refreshHFSMStatus() {
+        if (CURRENT_TARGET_ID === "NONE") return;
+        try {
+            const response = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "GET_HFSM_STATUS", target_id: CURRENT_TARGET_ID, auth_token: SESSION_TOKEN }) });
+            const result = await response.json();
+            if (result.status === "success") {
+                document.getElementById("hfsmPanel").style.display = "block";
+                document.getElementById("progressText").innerText = `${result.progress}% PROFILED`;
+                document.getElementById("mainStateText").innerText = result.main_state;
+                const barFill = document.getElementById("hfsmProgress");
+                barFill.style.width = `${result.progress}%`;
+                
+                if(result.progress < 50) barFill.style.backgroundColor = "var(--red)"; 
+                else if(result.progress < 100) barFill.style.backgroundColor = "var(--gold)"; 
+                else barFill.style.backgroundColor = "var(--green)"; 
+
+                const m = result.hfsm_matrix;
+                const toggleBadge = (id, isActive, actClass) => { const el = document.getElementById(id); if(isActive) { el.classList.add("active", actClass); } else { el.classList.remove("active", "active-recon", "active-bhv", "active-exc"); } };
+                toggleBadge("bdg-sos", m.sosial, "active-recon"); toggleBadge("bdg-pro", m.profesional, "active-recon");
+                toggleBadge("bdg-aka", m.akademik, "active-recon"); toggleBadge("bdg-ano", m.anonim, "active-recon");
+                toggleBadge("bdg-bhv", m.behavior, "active-bhv"); toggleBadge("bdg-exc", m.execution, "active-exc");
+            }
+        } catch(e) {}
+    }
+
+    async function openQuickSummary() {
+        if (CURRENT_TARGET_ID === "NONE") {
+            alert("Pilih target aktif terlebih dahulu.");
+            return;
+        }
+
+        const modal = document.getElementById("summary-modal");
+        const loading = document.getElementById("summary-loading");
+        const content = document.getElementById("summary-content");
+
+        modal.style.display = "block";
+        loading.style.display = "block";
+        content.style.display = "none";
+
+        try {
+            const response = await sendToEngine({ action: "GET_ALL_DATA", target_id: CURRENT_TARGET_ID }, null, null);
+
+            if (response && response.status === "success") {
+                const fpCount = response.footprint_data ? response.footprint_data.length : 0;
+                const bhCount = response.behavior_data ? response.behavior_data.length : 0;
+                const exCount = response.execution_data ? response.execution_data.length : 0;
+
+                content.innerHTML = `
+                    <div style="margin-bottom: 15px; border-bottom: 1px dashed var(--border); padding-bottom: 10px;">
+                        <strong style="color: var(--text-main);">ID TARGET:</strong> 
+                        <span style="font-family: 'Courier New', monospace; color: var(--blue); font-weight: bold; font-size: 1.1em;">${CURRENT_TARGET_ID}</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; text-align: center;">
+                        <div style="background: var(--bg-input); padding: 20px 10px; border: 1px solid var(--border); border-radius: 6px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
+                            <div style="font-size: 28px; font-weight: bold; color: var(--gold);">${fpCount}</div>
+                            <div style="font-size: 0.8em; color: var(--text-muted); margin-top: 8px;">Digital<br>Footprint</div>
+                        </div>
+                        <div style="background: var(--bg-input); padding: 20px 10px; border: 1px solid var(--border); border-radius: 6px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
+                            <div style="font-size: 28px; font-weight: bold; color: var(--blue);">${bhCount}</div>
+                            <div style="font-size: 0.8em; color: var(--text-muted); margin-top: 8px;">Behavioral<br>Tags</div>
+                        </div>
+                        <div style="background: var(--bg-input); padding: 20px 10px; border: 1px solid var(--border); border-radius: 6px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
+                            <div style="font-size: 28px; font-weight: bold; color: var(--green);">${exCount}</div>
+                            <div style="font-size: 0.8em; color: var(--text-muted); margin-top: 8px;">Execution<br>Theory</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 25px; background: rgba(46, 213, 115, 0.1); padding: 12px; border-left: 4px solid var(--green); font-size: 0.85em; color: #ccc;">
+                        <strong>Status Terkini:</strong> Data di atas tersinkronisasi dan berhasil ditarik secara real-time dari spreadsheet database.
+                    </div>
+                `;
+            } else {
+                content.innerHTML = `<p style="color: var(--red); text-align:center;">Gagal mengambil ringkasan data: ${response ? response.message : 'Unknown error'}</p>`;
+            }
+        } catch (error) {
+            content.innerHTML = `<p style="color: var(--red); text-align:center;">Terjadi kegagalan interkoneksi jaringan dengan server database.</p>`;
+        } finally {
+            loading.style.display = "none";
+            content.style.display = "block";
+        }
+    }
+
+    function closeQuickSummary() {
+        document.getElementById("summary-modal").style.display = "none";
+    }
+
+    async function submitInisiasi() {
+        const nama = document.getElementById("init-nama").value; const identifier = document.getElementById("init-identifier").value; const notes = document.getElementById("init-notes").value;
+        if (!nama || !identifier) return alert("Nama dan Identifier wajib diisi!");
+        const res = await sendToEngine({ action: "ADD_TARGET", data: { nama, identifier, notes } }, "log-inisiasi", document.getElementById("btn-init"));
+        if (res) { document.getElementById("init-nama").value=''; document.getElementById("init-identifier").value=''; document.getElementById("init-notes").value=''; await loadTargetDropdown(); switchActiveTarget(res.target_id); }
+    }
+    
+    async function submitFootprint() {
+        const data = { target_id: CURRENT_TARGET_ID, Platform: document.getElementById("fp-platform").value, URL_Temuan: document.getElementById("fp-url").value,
