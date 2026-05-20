@@ -269,22 +269,6 @@
             <div class="form-group"><label>Catatan Singkat</label><textarea id="init-notes" rows="3" placeholder="Konteks awal..."></textarea></div>
             <button class="btn-execute" id="btn-init" onclick="submitInisiasi()">Daftarkan Target Baru</button>
             <div id="log-inisiasi" class="status-log">Sistem siap menerima input subjek.</div>
-
-            <div style="margin-top: 40px; padding: 25px; background-color: rgba(212, 175, 55, 0.05); border: 1px dashed var(--gold); border-radius: 8px;">
-                <h4 style="color: var(--gold); margin-top: 0; margin-bottom: 15px; font-family: 'Courier New', Courier, monospace;">[ MODUL EDUKASI: KESADARAN KEAMANAN MAHASISWA ]</h4>
-                
-                <p style="color: var(--text-muted); font-size: 0.9em; font-style: italic; margin-bottom: 15px; line-height: 1.6; border-left: 3px solid var(--gold); padding-left: 15px;">
-                    "Di batas senja kampus tercinta, sebelum derap langkah mahasiswa menyusuri jalur kolaborasi dan hibah riset, biarkan mereka tersadar: secarik data yang diserahkan tanpa makna adalah awal dari hilangnya kuasa privasi."
-                </p>
-                
-                <p style="color: #aaa; font-size: 0.85em; margin-bottom: 20px;">
-                    Gunakan tombol di bawah ini untuk memanggil halaman pancingan (Pretexting) yang disamarkan sebagai formulir pengajuan dana hibah. Sangat efektif untuk didemonstrasikan guna menguji kepekaan mahasiswa tanpa harus mengumpulkan data secara aktual.
-                </p>
-                
-                <button class="btn-execute" style="background-color: transparent; border: 1px solid var(--red); color: var(--red);" onclick="window.open('simulator-edukasi.html', '_blank')">
-                    🎭 JALANKAN SIMULATOR PHISHING (EDU-MODE)
-                </button>
-            </div>
         </div>
 
         <div id="tab-footprint" class="tab-content">
@@ -569,4 +553,26 @@
     }
     
     async function submitFootprint() {
-        const data = { target_id: CURRENT_TARGET_ID, Platform: document.getElementById("fp-platform").value, URL_Temuan: document.getElementById("fp-url").value,
+        const data = { target_id: CURRENT_TARGET_ID, Platform: document.getElementById("fp-platform").value, URL_Temuan: document.getElementById("fp-url").value, Kategori_Jejak: document.getElementById("fp-kategori").value, Validitas: document.getElementById("fp-validitas").value };
+        const res = await sendToEngine({ action: "ADD_FOOTPRINT", data: data }, "log-footprint", document.getElementById("btn-fp"));
+        if(res) { document.getElementById("fp-platform").value=''; document.getElementById("fp-url").value=''; refreshHFSMStatus(); } 
+    }
+    
+    async function submitBehavior() {
+        const data = { target_id: CURRENT_TARGET_ID, Pola_Waktu: document.getElementById("bh-waktu").value, Gaya_Komunikasi: document.getElementById("bh-gaya").value, Titik_Rentan_Psikologis: document.getElementById("bh-rentan").value, Minat_Spesifik: document.getElementById("bh-minat").value };
+        const res = await sendToEngine({ action: "ADD_BEHAVIOR", data: data }, "log-behavior", document.getElementById("btn-bh"));
+        if(res) { document.getElementById("bh-waktu").value=''; document.getElementById("bh-gaya").value=''; document.getElementById("bh-rentan").value=''; document.getElementById("bh-minat").value=''; refreshHFSMStatus(); }
+    }
+    
+    async function submitExecution() {
+        const data = { target_id: CURRENT_TARGET_ID, Vektor_Pendekatan: document.getElementById("ex-vektor").value, Skenario_Narasi: document.getElementById("ex-narasi").value, Probabilitas_Sukses: document.getElementById("ex-probabilitas").value };
+        const res = await sendToEngine({ action: "ADD_EXECUTION", data: data }, "log-execution", document.getElementById("btn-ex"));
+        if(res) { document.getElementById("ex-narasi").value=''; refreshHFSMStatus(); }
+    }
+
+    async function generateAIPrompt() {
+        if (CURRENT_TARGET_ID === "NONE") return alert("Pilih target terlebih dahulu!");
+        const btnAI = document.getElementById("btn-ai-gen"); const logExec = document.getElementById("log-execution"); const narasiArea = document.getElementById("ex-narasi");
+        btnAI.disabled = true; btnAI.innerHTML = "🧠 Menyusun Strategi Pretexting..."; logExec.style.color = "var(--gold)"; logExec.innerText = "Mengirim profil ke mesin AI...";
+        try {
+            const res = await sendToEngine({ action: "GENERATE_AI_PRETEXT
