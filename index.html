@@ -94,6 +94,7 @@
         }
         select.target-picker:focus { border-color: var(--gold); }
         
+        /* Tombol Tambahan Header */
         .btn-wipe { 
             background-color: #5a1a1a; color: #fff; border: 1px solid var(--red); 
             padding: 10px 15px; cursor: pointer; font-family: inherit; font-weight: bold; 
@@ -362,8 +363,7 @@
 
 <script>
     // =========================================================================
-    // ⚠️ PERINGATAN: MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI BAWAH INI!
-    // Ganti teks di dalam tanda kutip dengan URL Deployment yang berakhiran /exec
+    // PASTIKAN URL INI ADALAH URL WEB APP GAS-MU YANG BENAR!
     // =========================================================================
     const GAS_URL = "https://script.google.com/macros/s/AKfycbykgN0YNiaV91FgrG-sIJlyQi0k4cncNF7OgT2YURr1t5F6cyILps4TY8fyw-YT69N-4A/exec";
     
@@ -388,7 +388,7 @@
                 document.getElementById("mainApp").style.display = "block"; 
                 await loadTargetDropdown();
             } else { throw new Error(result.message); }
-        } catch (error) { msgEl.innerText = "Gagal memproses otentikasi. Pastikan GAS_URL sudah benar."; document.getElementById("authKey").value = ""; } 
+        } catch (error) { msgEl.innerText = error.message; document.getElementById("authKey").value = ""; } 
         finally { btn.disabled = false; btn.innerText = "AUTHORIZE"; }
     }
 
@@ -443,6 +443,7 @@
         picker.style.color = isNone ? "var(--red)" : "var(--green)";
         document.getElementById("btn-wipe").style.display = isNone ? "none" : "block"; 
         
+        // AKTIVASI TOMBOL RINGKASAN CEPAT
         const summaryBtn = document.getElementById("btn-quick-summary");
         if (summaryBtn) {
             summaryBtn.disabled = isNone;
@@ -485,6 +486,9 @@
         } catch(e) {}
     }
 
+    // =========================================================================
+    // FUNGSI BARU: MODAL RINGKASAN DATA
+    // =========================================================================
     async function openQuickSummary() {
         if (CURRENT_TARGET_ID === "NONE") {
             alert("Pilih target aktif terlebih dahulu.");
@@ -495,6 +499,7 @@
         const loading = document.getElementById("summary-loading");
         const content = document.getElementById("summary-content");
 
+        // Tampilkan Modal UI
         modal.style.display = "block";
         loading.style.display = "block";
         content.style.display = "none";
@@ -545,6 +550,9 @@
         document.getElementById("summary-modal").style.display = "none";
     }
 
+    // =========================================================================
+    // FUNGSI SUBMIT DATA LAINNYA
+    // =========================================================================
     async function submitInisiasi() {
         const nama = document.getElementById("init-nama").value; const identifier = document.getElementById("init-identifier").value; const notes = document.getElementById("init-notes").value;
         if (!nama || !identifier) return alert("Nama dan Identifier wajib diisi!");
@@ -575,4 +583,89 @@
         const btnAI = document.getElementById("btn-ai-gen"); const logExec = document.getElementById("log-execution"); const narasiArea = document.getElementById("ex-narasi");
         btnAI.disabled = true; btnAI.innerHTML = "🧠 Menyusun Strategi Pretexting..."; logExec.style.color = "var(--gold)"; logExec.innerText = "Mengirim profil ke mesin AI...";
         try {
-            const res = await sendToEngine({ action: "GENERATE_AI_PRETEXT
+            const res = await sendToEngine({ action: "GENERATE_AI_PRETEXT", target_id: CURRENT_TARGET_ID }, "log-execution", null);
+            if (res && res.generated_text) { narasiArea.value = res.generated_text.trim(); logExec.style.color = "var(--green)"; logExec.innerText = "[SUCCESS] Narasi AI berhasil disintesis."; }
+        } catch(e) { logExec.style.color = "var(--red)"; logExec.innerText = "[ERROR] AI gagal membuat narasi."; } 
+        finally { btnAI.disabled = false; btnAI.innerHTML = "<span style='font-size:1.2em;'>✨</span> Auto-Generate Narasi dengan AI"; }
+    }
+
+    async function generateLinguisticAnalysis() {
+        const sampleText = document.getElementById("ling-sample").value;
+        if (!sampleText) return alert("Tempelkan teks percakapan terlebih dahulu!");
+
+        const btnLing = document.getElementById("btn-ling-gen");
+        const logLing = document.getElementById("log-linguistic");
+        const resultArea = document.getElementById("ling-result");
+
+        btnLing.disabled = true;
+        btnLing.innerHTML = "🧠 Memindai Indikator Manipulasi...";
+        logLing.style.color = "var(--gold)";
+        logLing.innerText = "Melakukan audit forensik bahasa ke mesin kognitif...";
+        resultArea.style.display = "none";
+        resultArea.innerHTML = "";
+
+        try {
+            const res = await sendToEngine({ action: "ANALYZE_LINGUISTIC", text_sample: sampleText }, "log-linguistic", null);
+            if (res && res.analysis_result) {
+                resultArea.innerHTML = res.analysis_result.replace(/\n/g, "<br>");
+                resultArea.style.display = "block";
+                logLing.style.color = "var(--red)";
+                logLing.innerText = "[WARNING] Audit forensik bahasa selesai diurai.";
+            }
+        } catch(e) {
+            logLing.style.color = "var(--red)";
+            logLing.innerText = "[ERROR] Gagal menganalisis teks.";
+        } finally {
+            btnLing.disabled = false;
+            btnLing.innerHTML = "<span style='font-size:1.2em;'>🚨</span> Pindai Red Flags Percakapan";
+        }
+    }
+
+    async function renderVisualMap() {
+        const container = document.getElementById("networkGraph"); container.innerHTML = "<p style='padding:20px; color:#aaa; font-family:Courier New;'>Menarik struktur relasi dari database...</p>";
+        if (CURRENT_TARGET_ID === "NONE") return;
+        try {
+            const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "GET_GRAPH_DATA", target_id: CURRENT_TARGET_ID, auth_token: SESSION_TOKEN }) });
+            const result = await res.json();
+            if (result.status === "success") { networkInstance = new vis.Network(container, { nodes: new vis.DataSet(result.nodes), edges: new vis.DataSet(result.edges) }, { nodes: { font: { color: '#ffffff' }, borderWidth: 2 }, edges: { color: { color: '#666' }, arrows: 'to' } }); }
+        } catch (e) { container.innerHTML = "<p style='color:var(--red);'>Gagal merender grafik.</p>"; }
+    }
+
+    async function renderTimeline() {
+        const board = document.getElementById("timelineBoard"); board.innerHTML = "<p style='color:var(--gold); font-family:Courier New;'>Menyusun ulang kronologi...</p>";
+        if (CURRENT_TARGET_ID === "NONE") return;
+        try {
+            const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "GET_TIMELINE_DATA", target_id: CURRENT_TARGET_ID, auth_token: SESSION_TOKEN }) });
+            const result = await res.json();
+            if (result.status === "success" && result.timeline.length > 0) {
+                cachedTimelineData = result.timeline; 
+                let html = '<div class="timeline-container">';
+                result.timeline.forEach(item => { html += `<div class="timeline-item ${item.type}"><span class="timeline-date">[ ${item.date} ]</span><div class="timeline-title">${item.title}</div><div class="timeline-desc">${item.desc}</div></div>`; });
+                board.innerHTML = html + '</div>';
+            } else { board.innerHTML = "<p style='color:var(--text-muted); font-family:Courier New;'>Belum ada data kronologis tercatat.</p>"; }
+        } catch (e) { board.innerHTML = "<p style='color:var(--red);'>Gagal menarik narasi.</p>"; }
+    }
+
+    async function generateDossier() {
+        if (CURRENT_TARGET_ID === "NONE") return;
+        const paper = document.getElementById("dossierPaper"); await renderTimeline(); 
+        const picker = document.getElementById("targetPicker"); const targetName = picker.options[picker.selectedIndex].text.split(" (")[0]; 
+        let html = `<div id="dossierHeaderArea"><h1 style="margin: 0; font-size: 24px;">EXECUTIVE DOSSIER REPORT</h1><p style="margin: 5px 0 0 0; color: #555;">Dokumen Rahasia - EarlytaOSint System</p><p style="margin: 5px 0 0 0;"><strong>ID Subjek:</strong> ${CURRENT_TARGET_ID} | <strong>Nama:</strong> ${targetName}</p><p style="margin: 5px 0 0 0;"><strong>Tanggal Diekstrak:</strong> ${new Date().toLocaleDateString('id-ID')}</p></div>`;
+        cachedTimelineData.forEach(item => { html += `<div class="dossier-section"><h3 style="margin: 0 0 5px 0; color: #333;">${item.title}</h3><p style="margin: 0 0 5px 0; font-size: 0.85em; color: #777;">Konteks/Fase: ${item.date}</p><p style="margin: 0; line-height: 1.6;">${item.desc}</p></div>`; });
+        paper.innerHTML = html + `<div style="text-align: center; margin-top: 30px; font-size: 0.8em; color: #888;">--- AKHIR DARI LAPORAN ---</div>`;
+        paper.style.display = "block"; document.getElementById("btn-print").style.display = "block";
+    }
+
+    async function wipeTargetData() {
+        if (CURRENT_TARGET_ID === "NONE") return;
+        if (!confirm(`PERINGATAN KRITIS: Hapus SELURUH data target [${CURRENT_TARGET_ID}]?\n\nLanjutkan?`)) return;
+        const btnWipe = document.getElementById("btn-wipe"); const originalText = btnWipe.innerText; btnWipe.innerText = "MENGHANGUSKAN..."; btnWipe.disabled = true;
+        try {
+            const res = await sendToEngine({ action: "DELETE_TARGET", target_id: CURRENT_TARGET_ID }, null, null);
+            if (res) { alert("Protokol Wipe Selesai:\n" + res.message); await loadTargetDropdown(); switchActiveTarget("NONE"); switchTab({ currentTarget: document.getElementsByClassName("tab-link")[0] }, 'tab-inisiasi'); }
+        } finally { btnWipe.innerText = originalText; btnWipe.disabled = false; }
+    }
+</script>
+
+</body>
+</html>
