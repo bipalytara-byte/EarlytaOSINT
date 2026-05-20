@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EarlytaOSint | Database Viewer</title>
+    <style>
+        /* TEMA & TIPOGRAFI - Selaras dengan Earlyta OSINT */
+        :root {
+            --bg-body: #0b0c10;
+            --bg-card: #1f2833;
+            --bg-input: #11151a;
+            --text-main: #c5c6c7;
+            --text-muted: #888;
+            --gold: #d4af37;
+            --red: #ff5555;
+            --blue: #5555ff;
+            --green: #2ed573;
+            --border: #333;
+        }
+
+        body { 
+            background-color: var(--bg-body); 
+            color: var(--text-main); 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .header-title {
+            color: var(--gold);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            text-align: center;
+        }
+
+        .control-panel {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            flex-wrap: wrap;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px;
+            background-color: var(--bg-body);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: transparent;
+            color: var(--green);
+            border: 1px solid var(--green);
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background-color: var(--green);
+            color: #000;
+        }
+        
+        button:disabled {
+            background-color: #333;
+            color: #666;
+            border-color: #333;
+            cursor: not-allowed;
+        }
+
+        /* Tabel Styles */
+        .db-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            font-size: 0.85em;
+            background-color: rgba(0,0,0,0.2);
+        }
+        .db-table th, .db-table td {
+            border: 1px solid var(--border);
+            padding: 12px 15px;
+            text-align: left;
+            color: var(--text-main);
+        }
+        .db-table th {
+            background-color: var(--bg-input);
+            color: var(--gold);
+            font-family: 'Courier New', Courier, monospace;
+            letter-spacing: 1px;
+        }
+        .db-section-title {
+            color: var(--blue);
+            font-size: 1.1em;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        .loading-text { color: var(--gold); text-align: center; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 class="header-title">[ DATA REPOSITORY VIEWER ]</h2>
+    <p style="text-align: center; color: var(--text-muted); font-size: 0.85em; margin-bottom: 25px;">
+        Akses langsung ke database Spreadsheet untuk melihat seluruh data intelijen target yang telah terkumpul.
+    </p>
+
+    <div class="control-panel">
+        <input type="text" id="input-url" placeholder="URL Web App Google Apps Script" value="https://script.google.com/macros/s/GANTI_DENGAN_URL_ANDA/exec">
+        <input type="text" id="input-target" placeholder="Masukkan ID Target (Contoh: TRG-123456)">
+        <button id="btn-fetch" onclick="fetchDatabaseView()">TAMPILKAN DATA</button>
+    </div>
+
+    <div id="db-tables-container">
+        <p style="color: #666; text-align: center; font-style: italic; padding: 40px 0;">
+            Masukkan ID Target dan klik Tampilkan Data...
+        </p>
+    </div>
+</div>
+
+<script>
+    const SECRET_KEY = "Senja2026";
+
+    async function fetchDatabaseView() {
+        const urlApp = document.getElementById("input-url").value.trim();
+        const targetId = document.getElementById("input-target").value.trim();
+        const container = document.getElementById("db-tables-container");
+        const btnFetch = document.getElementById("btn-fetch");
+
+        if (!urlApp || !targetId) {
+            alert("Harap isi URL Web App dan ID Target!");
+            return;
+        }
+
+        container.innerHTML = "<p class='loading-text'>Menghubungkan ke server database... Mengambil data intelijen...</p>";
+        btnFetch.disabled = true;
+        btnFetch.innerText = "MEMUAT...";
+
+        try {
+            const response = await fetch(urlApp, {
+                method: 'POST',
+                body: JSON.stringify({
+                    auth_token: SECRET_KEY,
+                    action: "GET_ALL_DATA",
+                    target_id: targetId
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.status === "success") {
+                let html = "";
+                
+                html += `<h4 class="db-section-title" style="color: var(--gold);">1. DIGITAL FOOTPRINT</h4>`;
+                html += generateTableHTML(result.footprint_data);
+                
+                html += `<h4 class="db-section-title" style="color: var(--blue);">2. BEHAVIORAL TAGS</h4>`;
+                html += generateTableHTML(result.behavior_data);
+                
+                html += `<h4 class="db-section-title" style="color: var(--green);">3. EXECUTION THEORY</h4>`;
+                html += generateTableHTML(result.execution_data);
+                
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = `<p style="color: var(--red); text-align: center;">Gagal memuat: ${result.message}</p>`;
+            }
+        } catch (error) {
+            container.innerHTML = `<p style="color: var(--red); text-align: center;">Koneksi server terputus atau URL tidak valid.</p>`;
+        } finally {
+            btnFetch.disabled = false;
+            btnFetch.innerText = "TAMPILKAN DATA";
+        }
+    }
+
+    function generateTableHTML(dataArray) {
+        if (!dataArray || dataArray.length === 0) {
+            return "<p style='color: var(--text-muted); margin-bottom: 25px;'>Data log belum tersedia untuk target ini di kategori tersebut.</p>";
+        }
+        
+        let html = `<div style="overflow-x:auto;"><table class="db-table"><thead><tr>`;
+        
+        const headers = Object.keys(dataArray[0]);
+        headers.forEach(h => html += `<th>${h.replace(/_/g, " ")}</th>`);
+        html += `</tr></thead><tbody>`;
+        
+        dataArray.forEach(row => {
+            html += `<tr>`;
+            headers.forEach(h => html += `<td>${row[h] || "-"}</td>`);
+            html += `</tr>`;
+        });
+        
+        html += `</tbody></table></div>`;
+        return html;
+    }
+</script>
+
+</body>
+</html>
