@@ -64,7 +64,7 @@
            DASHBOARD UTAMA
         ========================================= */
         #mainApp { 
-            display: none; /* Disembunyikan secara default */
+            display: none; 
             width: 100%; 
             max-width: 1000px; 
             margin: 40px 20px;
@@ -85,7 +85,8 @@
             display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; 
         }
         .header h1 { margin: 0; color: var(--gold); font-size: 1.6em; font-family: 'Courier New', Courier, monospace; letter-spacing: 1px;}
-        .selector-zone { display: flex; align-items: center; gap: 12px; }
+        .selector-zone { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        
         select.target-picker { 
             background-color: var(--bg-input); color: var(--red); border: 1px solid var(--border); 
             padding: 10px 15px; font-family: inherit; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95em;
@@ -93,12 +94,21 @@
         }
         select.target-picker:focus { border-color: var(--gold); }
         
+        /* Tombol Tambahan Header */
         .btn-wipe { 
             background-color: #5a1a1a; color: #fff; border: 1px solid var(--red); 
             padding: 10px 15px; cursor: pointer; font-family: inherit; font-weight: bold; 
             border-radius: 6px; display: none; transition: all 0.3s; 
         }
         .btn-wipe:hover { background-color: var(--red); color: #fff; box-shadow: 0 0 10px rgba(255,85,85,0.4); }
+
+        .btn-quick {
+            background-color: transparent; color: var(--gold); border: 1px solid var(--gold); 
+            padding: 10px 15px; cursor: pointer; font-family: inherit; font-weight: bold; 
+            border-radius: 6px; transition: all 0.3s; font-size: 0.9em;
+        }
+        .btn-quick:hover:not(:disabled) { background-color: var(--gold); color: #000; }
+        .btn-quick:disabled { border-color: #555; color: #555; cursor: not-allowed; }
 
         /* PANEL HFSM */
         #hfsmPanel { background-color: rgba(0,0,0,0.3); padding: 20px 30px; border-bottom: 1px solid var(--border); display: none; }
@@ -115,9 +125,9 @@
         /* MENU NAVIGASI TABS */
         .nav-tabs { 
             display: flex; background-color: rgba(0,0,0,0.15); border-bottom: 1px solid var(--border); 
-            overflow-x: auto; /* Memastikan bisa digeser di layar kecil */
+            overflow-x: auto; 
         }
-        .nav-tabs::-webkit-scrollbar { display: none; } /* Sembunyikan scrollbar agar rapi */
+        .nav-tabs::-webkit-scrollbar { display: none; } 
         .tab-link { 
             flex: 1; min-width: 100px; padding: 15px 10px; text-align: center; background: none; border: none; 
             color: var(--text-muted); font-family: inherit; font-size: 0.85em; cursor: pointer; 
@@ -218,6 +228,11 @@
                 <select id="targetPicker" class="target-picker" onchange="switchActiveTarget(this.value)">
                     <option value="NONE">-- PILIH TARGET --</option>
                 </select>
+                
+                <button id="btn-quick-summary" class="btn-quick" onclick="openQuickSummary()" title="Lihat Rekap Data" disabled>
+                    📊 RINGKASAN
+                </button>
+
                 <button id="btn-wipe" class="btn-wipe" onclick="wipeTargetData()" title="WIPE DATA">☠️ WIPE</button>
             </div>
         </div>
@@ -322,7 +337,27 @@
             
             <div id="ling-result"></div>
         </div>
+    </div>
+</div>
 
+<div id="summary-modal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); backdrop-filter: blur(5px);">
+    <div style="background-color: var(--bg-card); margin: 10% auto; padding: 25px; border: 1px solid var(--border); width: 80%; max-width: 600px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.7);">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px;">
+            <h3 style="color: var(--gold); margin: 0; font-family: 'Courier New', Courier, monospace;">[ RINGKASAN DATA INSTAN ]</h3>
+            <span onclick="closeQuickSummary()" style="color: var(--text-muted); cursor: pointer; font-size: 24px; font-weight: bold; transition: color 0.3s;">&times;</span>
+        </div>
+        
+        <div id="summary-loading" style="color: var(--gold); font-style: italic; text-align: center; display: none; padding: 20px 0;">
+            Menghubungkan ke matriks database... Memuat data...
+        </div>
+        
+        <div id="summary-content">
+            <p style="color: var(--text-muted);">Silakan pilih target terlebih dahulu untuk melihat ringkasan.</p>
+        </div>
+        
+        <div style="text-align: right; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px;">
+            <button onclick="closeQuickSummary()" style="padding: 8px 15px; background: transparent; border: 1px solid var(--text-muted); color: var(--text-muted); cursor: pointer; border-radius: 4px; font-weight: bold;">Tutup</button>
+        </div>
     </div>
 </div>
 
@@ -350,7 +385,7 @@
             if (result.status === "success") {
                 SESSION_TOKEN = key; 
                 document.getElementById("loginScreen").style.display = "none";
-                document.getElementById("mainApp").style.display = "block"; // Ubah menjadi block agar menyesuaikan wrapper
+                document.getElementById("mainApp").style.display = "block"; 
                 await loadTargetDropdown();
             } else { throw new Error(result.message); }
         } catch (error) { msgEl.innerText = error.message; document.getElementById("authKey").value = ""; } 
@@ -408,6 +443,13 @@
         picker.style.color = isNone ? "var(--red)" : "var(--green)";
         document.getElementById("btn-wipe").style.display = isNone ? "none" : "block"; 
         
+        // AKTIVASI TOMBOL RINGKASAN CEPAT
+        const summaryBtn = document.getElementById("btn-quick-summary");
+        if (summaryBtn) {
+            summaryBtn.disabled = isNone;
+            summaryBtn.innerText = isNone ? "📊 RINGKASAN" : `📊 RINGKASAN (${targetId})`;
+        }
+        
         const menus = ["menu-footprint", "menu-behavior", "menu-execution", "menu-visual", "menu-timeline", "menu-dossier", "menu-linguistic"];
         menus.forEach(menu => document.getElementById(menu).disabled = isNone);
         
@@ -444,22 +486,92 @@
         } catch(e) {}
     }
 
+    // =========================================================================
+    // FUNGSI BARU: MODAL RINGKASAN DATA
+    // =========================================================================
+    async function openQuickSummary() {
+        if (CURRENT_TARGET_ID === "NONE") {
+            alert("Pilih target aktif terlebih dahulu.");
+            return;
+        }
+
+        const modal = document.getElementById("summary-modal");
+        const loading = document.getElementById("summary-loading");
+        const content = document.getElementById("summary-content");
+
+        // Tampilkan Modal UI
+        modal.style.display = "block";
+        loading.style.display = "block";
+        content.style.display = "none";
+
+        try {
+            const response = await sendToEngine({ action: "GET_ALL_DATA", target_id: CURRENT_TARGET_ID }, null, null);
+
+            if (response && response.status === "success") {
+                const fpCount = response.footprint_data ? response.footprint_data.length : 0;
+                const bhCount = response.behavior_data ? response.behavior_data.length : 0;
+                const exCount = response.execution_data ? response.execution_data.length : 0;
+
+                content.innerHTML = `
+                    <div style="margin-bottom: 15px; border-bottom: 1px dashed var(--border); padding-bottom: 10px;">
+                        <strong style="color: var(--text-main);">ID TARGET:</strong> 
+                        <span style="font-family: 'Courier New', monospace; color: var(--blue); font-weight: bold; font-size: 1.1em;">${CURRENT_TARGET_ID}</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; text-align: center;">
+                        <div style="background: var(--bg-input); padding: 20px 10px; border: 1px solid var(--border); border-radius: 6px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
+                            <div style="font-size: 28px; font-weight: bold; color: var(--gold);">${fpCount}</div>
+                            <div style="font-size: 0.8em; color: var(--text-muted); margin-top: 8px;">Digital<br>Footprint</div>
+                        </div>
+                        <div style="background: var(--bg-input); padding: 20px 10px; border: 1px solid var(--border); border-radius: 6px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
+                            <div style="font-size: 28px; font-weight: bold; color: var(--blue);">${bhCount}</div>
+                            <div style="font-size: 0.8em; color: var(--text-muted); margin-top: 8px;">Behavioral<br>Tags</div>
+                        </div>
+                        <div style="background: var(--bg-input); padding: 20px 10px; border: 1px solid var(--border); border-radius: 6px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
+                            <div style="font-size: 28px; font-weight: bold; color: var(--green);">${exCount}</div>
+                            <div style="font-size: 0.8em; color: var(--text-muted); margin-top: 8px;">Execution<br>Theory</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 25px; background: rgba(46, 213, 115, 0.1); padding: 12px; border-left: 4px solid var(--green); font-size: 0.85em; color: #ccc;">
+                        <strong>Status Terkini:</strong> Data di atas tersinkronisasi dan berhasil ditarik secara real-time dari spreadsheet database.
+                    </div>
+                `;
+            } else {
+                content.innerHTML = `<p style="color: var(--red); text-align:center;">Gagal mengambil ringkasan data: ${response ? response.message : 'Unknown error'}</p>`;
+            }
+        } catch (error) {
+            content.innerHTML = `<p style="color: var(--red); text-align:center;">Terjadi kegagalan interkoneksi jaringan dengan server database.</p>`;
+        } finally {
+            loading.style.display = "none";
+            content.style.display = "block";
+        }
+    }
+
+    function closeQuickSummary() {
+        document.getElementById("summary-modal").style.display = "none";
+    }
+
+    // =========================================================================
+    // FUNGSI SUBMIT DATA LAINNYA
+    // =========================================================================
     async function submitInisiasi() {
         const nama = document.getElementById("init-nama").value; const identifier = document.getElementById("init-identifier").value; const notes = document.getElementById("init-notes").value;
         if (!nama || !identifier) return alert("Nama dan Identifier wajib diisi!");
         const res = await sendToEngine({ action: "ADD_TARGET", data: { nama, identifier, notes } }, "log-inisiasi", document.getElementById("btn-init"));
         if (res) { document.getElementById("init-nama").value=''; document.getElementById("init-identifier").value=''; document.getElementById("init-notes").value=''; await loadTargetDropdown(); switchActiveTarget(res.target_id); }
     }
+    
     async function submitFootprint() {
         const data = { target_id: CURRENT_TARGET_ID, Platform: document.getElementById("fp-platform").value, URL_Temuan: document.getElementById("fp-url").value, Kategori_Jejak: document.getElementById("fp-kategori").value, Validitas: document.getElementById("fp-validitas").value };
         const res = await sendToEngine({ action: "ADD_FOOTPRINT", data: data }, "log-footprint", document.getElementById("btn-fp"));
         if(res) { document.getElementById("fp-platform").value=''; document.getElementById("fp-url").value=''; refreshHFSMStatus(); } 
     }
+    
     async function submitBehavior() {
         const data = { target_id: CURRENT_TARGET_ID, Pola_Waktu: document.getElementById("bh-waktu").value, Gaya_Komunikasi: document.getElementById("bh-gaya").value, Titik_Rentan_Psikologis: document.getElementById("bh-rentan").value, Minat_Spesifik: document.getElementById("bh-minat").value };
         const res = await sendToEngine({ action: "ADD_BEHAVIOR", data: data }, "log-behavior", document.getElementById("btn-bh"));
         if(res) { document.getElementById("bh-waktu").value=''; document.getElementById("bh-gaya").value=''; document.getElementById("bh-rentan").value=''; document.getElementById("bh-minat").value=''; refreshHFSMStatus(); }
     }
+    
     async function submitExecution() {
         const data = { target_id: CURRENT_TARGET_ID, Vektor_Pendekatan: document.getElementById("ex-vektor").value, Skenario_Narasi: document.getElementById("ex-narasi").value, Probabilitas_Sukses: document.getElementById("ex-probabilitas").value };
         const res = await sendToEngine({ action: "ADD_EXECUTION", data: data }, "log-execution", document.getElementById("btn-ex"));
